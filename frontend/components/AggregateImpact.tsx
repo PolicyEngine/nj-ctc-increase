@@ -128,8 +128,7 @@ export default function AggregateImpact({ triggered }: Props) {
   const sections = [
     { key: 'fiscal' as const, label: 'Budgetary impact' },
     { key: 'distributional' as const, label: 'Distributional impact' },
-    // Winners & losers tab temporarily hidden
-    // { key: 'winners' as const, label: 'Winners & losers' },
+    { key: 'winners' as const, label: 'Winners & losers' },
     { key: 'poverty' as const, label: 'Poverty impact' },
   ];
 
@@ -184,7 +183,7 @@ export default function AggregateImpact({ triggered }: Props) {
             <h3 className="text-lg font-semibold text-gray-800 mb-3">
               Revenue change ({selectedYear})
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="max-w-md">
               <div className={`rounded-lg p-5 border ${
                 data.budget.state_tax_revenue_impact >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
               }`}>
@@ -198,39 +197,7 @@ export default function AggregateImpact({ triggered }: Props) {
                   Change in New Jersey state tax collections
                 </p>
               </div>
-              <div className={`rounded-lg p-5 border ${
-                data.budget.federal_tax_revenue_impact >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
-              }`}>
-                <p className="text-sm text-gray-700 mb-2">Federal revenue change</p>
-                <p className={`text-2xl font-bold ${
-                  data.budget.federal_tax_revenue_impact >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formatBillions(data.budget.federal_tax_revenue_impact)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Spillover effect on federal collections
-                </p>
-              </div>
-              <div className={`rounded-lg p-5 border ${
-                data.budget.budgetary_impact >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
-              }`}>
-                <p className="text-sm text-gray-700 mb-2">Total household impact</p>
-                <p className={`text-2xl font-bold ${
-                  data.budget.budgetary_impact >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formatBillions(data.budget.budgetary_impact)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Combined state + federal change
-                </p>
-              </div>
             </div>
-            <p className="text-xs text-gray-500 italic mt-3">
-              State revenue cost is the static change in New Jersey state tax
-              collections under the selected reform variant, holding household
-              behavior constant. Federal spillover reflects the indirect
-              effect on federal collections (e.g., through SALT deductions).
-            </p>
           </div>
 
           {/* Income bracket table */}

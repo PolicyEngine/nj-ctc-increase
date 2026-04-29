@@ -195,9 +195,9 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-4 font-semibold text-gray-900">District</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-900">Representative</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Average change</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Relative change</th>
                 <th className="text-right py-3 px-4 font-semibold text-gray-900">Winners</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-900">Average change</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-900">Child poverty change</th>
               </tr>
             </thead>
             <tbody>
@@ -222,15 +222,17 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
                     {d.party ? <span className="ml-1 text-xs">({d.party})</span> : null}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-700">
+                    {d.winners_share !== undefined
+                      ? `${(d.winners_share * 100).toFixed(1)}%`
+                      : '—'}
+                  </td>
+                  <td className="py-3 px-4 text-right text-gray-700">
                     {d.average_household_income_change >= 0 ? '+' : ''}
                     ${d.average_household_income_change.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-700">
-                    {(d.relative_household_income_change * 100).toFixed(2)}%
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-700">
-                    {d.winners_share !== undefined
-                      ? `${(d.winners_share * 100).toFixed(1)}%`
+                    {d.child_poverty_pct_change !== undefined
+                      ? `${d.child_poverty_pct_change > 0 ? '+' : ''}${d.child_poverty_pct_change.toFixed(2)}%`
                       : '—'}
                   </td>
                 </tr>
@@ -257,6 +259,7 @@ function DistrictDetailCard({
   const losersShare = district.losers_share ?? 0;
   // "No change" is the residual after winners + losers.
   const noChangeShare = Math.max(0, 1 - winnersShare - losersShare);
+  const childPovChange = district.child_poverty_pct_change ?? 0;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
@@ -317,11 +320,16 @@ function DistrictDetailCard({
           <p className="text-xs text-gray-500 mt-1">of households gain</p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Losers</p>
-          <p className="text-xl font-bold text-red-600">
-            {(losersShare * 100).toFixed(1)}%
+          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Child poverty change</p>
+          <p
+            className={`text-xl font-bold ${
+              childPovChange < 0 ? 'text-teal-700' : childPovChange > 0 ? 'text-red-700' : 'text-gray-700'
+            }`}
+          >
+            {childPovChange > 0 ? '+' : ''}
+            {childPovChange.toFixed(2)}%
           </p>
-          <p className="text-xs text-gray-500 mt-1">of households lose</p>
+          <p className="text-xs text-gray-500 mt-1">vs. current law</p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">No change</p>
