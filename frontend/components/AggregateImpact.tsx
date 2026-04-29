@@ -397,7 +397,7 @@ export default function AggregateImpact({ triggered }: Props) {
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-3 italic">
-                  Winners and losers are calculated at the household level. Some households in higher income deciles may see changes whose direction depends on the mix of tax units within the household.
+                  Winners and losers are calculated at the household level. A household may contain multiple tax units (e.g., an adult child living with parents who files separately). Some households in higher income deciles may see gains because one tax unit within the household qualifies for the expanded NJ CTC or EITC match while others do not.
                 </p>
               </div>
             </div>
