@@ -14,7 +14,7 @@ const inter = Inter({
 
 const SITE_URL = 'https://policyengine.org/us/nj-ctc-eitc-expansion';
 
-const SITE_TITLE = 'NJ CTC + EITC expansion calculator';
+const SITE_TITLE = 'NJ CTC + EITC Expansion Calculator';
 const SITE_DESCRIPTION =
   'Interactive analysis of the New Jersey Cash Alliance proposal to raise the state Child Tax Credit and Earned Income Tax Credit.';
 

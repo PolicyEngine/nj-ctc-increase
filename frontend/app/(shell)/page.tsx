@@ -49,7 +49,7 @@ export default function Home() {
       <div className="bg-primary-500 text-white py-8 px-4 shadow-md">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-4xl font-bold mb-2">
-            NJ CTC + EITC expansion calculator
+            NJ CTC + EITC Expansion Calculator
           </h1>
           <p className="text-lg opacity-90">
             See the impact of the New Jersey Cash Alliance proposal to raise the
