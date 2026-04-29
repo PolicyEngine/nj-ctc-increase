@@ -25,7 +25,7 @@ const NJ_REPRESENTATIVES: Record<string, { name: string; party: 'R' | 'D' }> = {
   '8': { name: 'Rob Menendez', party: 'D' },
   '9': { name: 'Nellie Pou', party: 'D' },
   '10': { name: 'LaMonica McIver', party: 'D' },
-  '11': { name: 'Mikie Sherrill', party: 'D' },
+  '11': { name: 'Analilia Mejia', party: 'D' },
   '12': { name: 'Bonnie Watson Coleman', party: 'D' },
 };
 
