@@ -18,19 +18,19 @@ const GROUP_UNITS = ["families", "spm_units", "tax_units", "households"] as cons
  * policy with the bundle.
  */
 const REFORM_POLICY: Record<string, Record<string, number>> = {
-  "gov.states.nj.tax.income.credits.ctc.amount.brackets[0].amount": {
+  "gov.states.nj.tax.income.credits.ctc.amount[0].amount": {
     "2026-01-01.2100-12-31": 1500,
   },
-  "gov.states.nj.tax.income.credits.ctc.amount.brackets[1].amount": {
+  "gov.states.nj.tax.income.credits.ctc.amount[1].amount": {
     "2026-01-01.2100-12-31": 1000,
   },
-  "gov.states.nj.tax.income.credits.ctc.amount.brackets[2].amount": {
+  "gov.states.nj.tax.income.credits.ctc.amount[2].amount": {
     "2026-01-01.2100-12-31": 750,
   },
-  "gov.states.nj.tax.income.credits.ctc.amount.brackets[3].amount": {
+  "gov.states.nj.tax.income.credits.ctc.amount[3].amount": {
     "2026-01-01.2100-12-31": 500,
   },
-  "gov.states.nj.tax.income.credits.ctc.amount.brackets[4].amount": {
+  "gov.states.nj.tax.income.credits.ctc.amount[4].amount": {
     "2026-01-01.2100-12-31": 250,
   },
   "gov.states.nj.tax.income.credits.ctc.age_limit": {
