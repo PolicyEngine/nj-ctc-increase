@@ -1,1 +1,1 @@
-# Tests for ut_tax_calc module
+# Tests for the nj_credit_calc module.

@@ -1,10 +1,9 @@
-"""
-Household situation builder for the 2026 Utah tax changes calculator.
+"""Household situation builder for the NJ CTC + EITC expansion calculator.
 
 This module builds PolicyEngine household situations used by the
 household calculator view. The calculator contrasts current-law 2026
-(baseline) with the pre-2026 (reverted) parameters described in
-``reform.json``; ``impact = current_law - reverted``.
+(baseline) with one of the forward-reform variants (CTC, EITC,
+combined); ``impact = reform - baseline``.
 """
 
 from typing import Any, Dict, List, Optional
@@ -31,7 +30,7 @@ def build_household_situation(
     income: float,
     year: int,
     max_earnings: float,
-    state_code: str = "UT",
+    state_code: str = "NJ",
     include_axes: bool = True,
 ) -> Dict[str, Any]:
     """
@@ -44,7 +43,7 @@ def build_household_situation(
         income: Employment income
         year: Tax year
         max_earnings: Maximum earnings for axis calculation
-        state_code: Two-letter state code (default: "UT")
+        state_code: Two-letter state code (default: "NJ")
         include_axes: Whether to include axes for parametric calculation
 
     Returns:
@@ -124,15 +123,13 @@ def calculate_household_impact(
     income: float,
     year: int,
     max_earnings: float,
-    state_code: str = "UT",
+    state_code: str = "NJ",
+    variant: str = "combined",
 ) -> Dict[str, Any]:
-    """
-    Calculate household impact of the 2026 Utah tax changes using PolicyEngine.
+    """Calculate household impact of the NJ CTC + EITC expansion.
 
-    This is the Python equivalent of the calculator view in the frontend.
-    It runs two simulations — the current-law (PolicyEngine baseline) and
-    the reverted-to-2025 (reform applied) case — and returns
-    ``impact = baseline - reform``.
+    Runs current-law and forward-reform simulations and returns
+    ``impact = reform - baseline``.
 
     Args:
         age_head: Age of the primary filer
@@ -141,23 +138,23 @@ def calculate_household_impact(
         income: Employment income
         year: Tax year
         max_earnings: Maximum earnings for chart x-axis
-        state_code: Two-letter state code (default: "UT")
+        state_code: Two-letter state code (default: "NJ")
+        variant: Reform variant — ``"ctc"``, ``"eitc"``, or ``"combined"``.
 
     Returns:
         Impact analysis results including income_range, net_income_change,
-        ut_income_tax_change, and income_tax_change (federal).
+        nj_income_tax_change, and income_tax_change (federal).
     """
     # Import here so the module can be imported without policyengine_us
     try:
         from policyengine_us import Simulation
-        from policyengine_core.reforms import Reform
     except ImportError:
         raise ImportError(
             "policyengine_us is required for calculate_household_impact. "
             "Install it with: pip install policyengine-us"
         )
 
-    from .reforms import load_reform
+    from .reforms import create_nj_reform
 
     situation = build_household_situation(
         age_head=age_head,
@@ -170,25 +167,21 @@ def calculate_household_impact(
         include_axes=True,
     )
 
-    # Baseline = current 2026 law already merged into PolicyEngine-US
+    # Baseline = current law. Reform = forward expansion variant.
     baseline_sim = Simulation(situation=situation)
     baseline_net_income = baseline_sim.calculate("household_net_income", year)
-    baseline_ut_income_tax = baseline_sim.calculate("ut_income_tax", year)
+    baseline_nj_income_tax = baseline_sim.calculate("nj_income_tax", year)
     baseline_income_tax = baseline_sim.calculate("income_tax", year)
     income_range = baseline_sim.calculate("employment_income", year)
 
-    # Reform = reverted parameters (pre-2026 values from reform.json)
-    reform = Reform.from_dict(load_reform(), country_id="us")
-    reform_sim = Simulation(situation=situation, reform=reform)
+    reform_sim = Simulation(situation=situation, reform=create_nj_reform(variant))
     reform_net_income = reform_sim.calculate("household_net_income", year)
-    reform_ut_income_tax = reform_sim.calculate("ut_income_tax", year)
+    reform_nj_income_tax = reform_sim.calculate("nj_income_tax", year)
     reform_income_tax = reform_sim.calculate("income_tax", year)
 
-    # Impact is current-law minus reverted (flipped from the typical
-    # reform - baseline formulation because our reform reverts policy).
-    net_income_change = baseline_net_income - reform_net_income
-    ut_income_tax_change = baseline_ut_income_tax - reform_ut_income_tax
-    income_tax_change = baseline_income_tax - reform_income_tax
+    net_income_change = reform_net_income - baseline_net_income
+    nj_income_tax_change = reform_nj_income_tax - baseline_nj_income_tax
+    income_tax_change = reform_income_tax - baseline_income_tax
 
     def interpolate(xs: np.ndarray, ys: np.ndarray, x: float) -> float:
         if x <= xs[0]:
@@ -203,12 +196,12 @@ def calculate_household_impact(
     return {
         "income_range": income_range.tolist(),
         "net_income_change": net_income_change.tolist(),
-        "ut_income_tax_change": ut_income_tax_change.tolist(),
+        "nj_income_tax_change": nj_income_tax_change.tolist(),
         "income_tax_change": income_tax_change.tolist(),
         "benefit_at_income": {
             "current_law": baseline_at_income,
-            "reverted": reform_at_income,
-            "difference": baseline_at_income - reform_at_income,
+            "reform": reform_at_income,
+            "difference": reform_at_income - baseline_at_income,
         },
         "x_axis_max": max_earnings,
     }

@@ -1,34 +1,20 @@
-"""Aggregate impact calculations for the 2026 Utah tax changes.
+"""Aggregate impact calculations for the NJ CTC + EITC expansion.
 
-Uses the Utah state-level microsimulation dataset
-(``hf://policyengine/policyengine-us-data/states/UT.h5``) to calculate
-the impact of the SB60 rate reduction and the HB290 Utah CTC phaseout
-increases.
-
-Because PolicyEngine-US already encodes the 2026 changes in the baseline
-(PR #7857), the reform in ``reform.json`` reverts those parameters to
-their pre-2026 (2025) values. The impact is therefore defined as::
-
-    impact = current_law_outcome - reverted_outcome
-
-The flipped sign (relative to a conventional reform-vs-baseline diff) is
-deliberate — it lets the dashboard show the benefit or cost of the
-policy as currently enacted.
-
-Pulls ``ut_income_tax``, ``income_tax`` (federal), and
-``household_net_income``; all distributional analysis (winners/losers,
-deciles, intra-decile) runs off ``household_net_income``.
+Uses the New Jersey state-level microsimulation dataset
+(``hf://policyengine/policyengine-us-data/states/NJ.h5``) to calculate
+the impact of forward reforms (one of ``ctc``, ``eitc``, ``combined``)
+relative to current law. Impact = reform - baseline (positive = gain
+for households).
 """
 
 import numpy as np
 from policyengine_us import Microsimulation
-from policyengine_core.reforms import Reform
 
-from .reforms import load_reform
+from .reforms import DEFAULT_VARIANT, create_nj_reform
 
 
-# Utah state-level dataset on HuggingFace
-UTAH_DATASET = "hf://policyengine/policyengine-us-data/states/UT.h5"
+# New Jersey state-level dataset on HuggingFace.
+NJ_DATASET = "hf://policyengine/policyengine-us-data/states/NJ.h5"
 
 # Intra-decile bounds and labels (same as app-v2)
 _INTRA_BOUNDS = [-np.inf, -0.05, -1e-3, 1e-3, 0.05, np.inf]
@@ -41,91 +27,85 @@ _INTRA_LABELS = [
 ]
 
 
-def create_utah_reverted_reform() -> Reform:
-    """Build the inverse reform that reverts Utah parameters to pre-2026 values."""
-    return Reform.from_dict(load_reform(), country_id="us")
-
-
 def _poverty_metrics(baseline_rate: float, reform_rate: float):
     """Return rate change and percent change for a poverty metric.
 
-    ``baseline_rate`` is the current-law rate; ``reform_rate`` is the
-    rate under the reverted parameters. The returned change is
-    current_law - reverted, matching the impact sign convention.
+    For a forward reform, the baseline is current law and the reform
+    raises households out of poverty, so ``baseline - reform`` is the
+    reduction in the poverty rate.
     """
     rate_change = baseline_rate - reform_rate
     percent_change = (
-        rate_change / reform_rate * 100 if reform_rate > 0 else 0.0
+        rate_change / baseline_rate * 100 if baseline_rate > 0 else 0.0
     )
     return rate_change, percent_change
 
 
-def calculate_aggregate_impact(year: int = 2026) -> dict:
-    """Calculate the Utah-wide aggregate impact of the 2026 tax changes.
+def calculate_aggregate_impact(
+    year: int = 2026,
+    variant: str = DEFAULT_VARIANT,
+) -> dict:
+    """Calculate the New Jersey aggregate impact of the selected reform.
 
     Args:
-        year: Tax year (default 2026). Only 2026 is meaningful; prior
-            years are before the reform took effect.
+        year: Tax year (default 2026).
+        variant: One of ``"ctc"``, ``"eitc"``, ``"combined"``.
 
     Returns:
         Dictionary with budget, decile, intra_decile, poverty, and
-        income-bracket fields. All money amounts are current_law minus
-        reverted (positive = gain for households, negative = cost to
-        government). State-revenue impact is negative because the rate
-        cut and expanded CTC reduce state receipts.
+        income-bracket fields. All money amounts are reform - baseline
+        (positive = gain for households, negative = cost to government).
     """
-    reform = create_utah_reverted_reform()
+    reform = create_nj_reform(variant)
 
-    # Both sims use the Utah state dataset so aggregates reflect Utah only.
-    sim_baseline = Microsimulation(dataset=UTAH_DATASET)
-    sim_reform = Microsimulation(dataset=UTAH_DATASET, reform=reform)
+    sim_baseline = Microsimulation(dataset=NJ_DATASET)
+    sim_reform = Microsimulation(dataset=NJ_DATASET, reform=reform)
 
     # ===== FISCAL IMPACT =====
-    # Utah state income tax
-    ut_baseline = sim_baseline.calculate(
-        "ut_income_tax", period=year, map_to="household"
+    nj_baseline = sim_baseline.calculate(
+        "nj_income_tax", period=year, map_to="household"
     )
-    ut_reform = sim_reform.calculate(
-        "ut_income_tax", period=year, map_to="household"
+    nj_reform = sim_reform.calculate(
+        "nj_income_tax", period=year, map_to="household"
     )
-    # baseline - reform: under current law, Utah collects less tax, so
-    # this is negative (state revenue reduction).
-    state_tax_revenue_impact = float((ut_baseline - ut_reform).sum())
+    state_tax_revenue_impact = float((nj_reform - nj_baseline).sum())
 
-    # Federal income tax
     fed_baseline = sim_baseline.calculate(
         "income_tax", period=year, map_to="household"
     )
     fed_reform = sim_reform.calculate(
         "income_tax", period=year, map_to="household"
     )
-    federal_tax_revenue_impact = float((fed_baseline - fed_reform).sum())
+    federal_tax_revenue_impact = float((fed_reform - fed_baseline).sum())
 
     tax_revenue_impact = federal_tax_revenue_impact + state_tax_revenue_impact
-    budgetary_impact = tax_revenue_impact  # no benefit spending
+    budgetary_impact = tax_revenue_impact
 
-    # household_net_income change for all distributional analysis
     baseline_net_income = sim_baseline.calculate(
         "household_net_income", period=year, map_to="household"
     )
     reform_net_income = sim_reform.calculate(
         "household_net_income", period=year, map_to="household"
     )
-    # Positive => household gains under current law vs pre-2026 policy.
-    income_change = baseline_net_income - reform_net_income
+    income_change = reform_net_income - baseline_net_income
+    change_arr = np.array(income_change)
+    baseline_net_income_arr = np.array(baseline_net_income)
+    household_weight = sim_reform.calculate("household_weight", period=year)
+    weight_arr = np.array(household_weight)
 
-    total_households = float((income_change * 0 + 1).sum())
+    total_households = float(weight_arr.sum())
 
     # ===== WINNERS / LOSERS =====
-    winners = float((income_change > 1).sum())
-    losers = float((income_change < -1).sum())
-    beneficiaries = float((income_change > 0).sum())
-
-    affected = abs(income_change) > 1
-    affected_count = float(affected.sum())
+    winners = float(weight_arr[change_arr > 1].sum())
+    losers = float(weight_arr[change_arr < -1].sum())
+    beneficiary_mask = change_arr > 0
+    beneficiaries = float(weight_arr[beneficiary_mask].sum())
     avg_benefit = (
-        float(income_change[affected].sum() / affected.sum())
-        if affected_count > 0
+        float(
+            (change_arr[beneficiary_mask] * weight_arr[beneficiary_mask]).sum()
+            / beneficiaries
+        )
+        if beneficiaries > 0
         else 0.0
     )
 
@@ -141,10 +121,13 @@ def calculate_aggregate_impact(year: int = 2026) -> dict:
     decile_relative = {}
     for d in range(1, 11):
         dmask = decile == d
-        d_count = float(dmask.sum())
+        d_weight = weight_arr[dmask]
+        d_count = float(d_weight.sum())
         if d_count > 0:
-            d_baseline_sum = float(baseline_net_income[dmask].sum())
-            d_change_sum = float(income_change[dmask].sum())
+            d_baseline_sum = float(
+                (baseline_net_income_arr[dmask] * d_weight).sum()
+            )
+            d_change_sum = float((change_arr[dmask] * d_weight).sum())
             decile_average[str(d)] = d_change_sum / d_count
             decile_relative[str(d)] = (
                 d_change_sum / d_baseline_sum
@@ -156,17 +139,13 @@ def calculate_aggregate_impact(year: int = 2026) -> dict:
             decile_relative[str(d)] = 0.0
 
     # Intra-decile requires person-weighted proportions — drop to numpy.
-    household_weight = sim_reform.calculate(
-        "household_weight", period=year
-    )
     people_per_hh = sim_baseline.calculate(
         "household_count_people", period=year, map_to="household"
     )
-    capped_baseline = np.maximum(np.array(reform_net_income), 1)
-    rel_change_arr = np.array(income_change) / capped_baseline
+    capped_baseline = np.maximum(baseline_net_income_arr, 1)
+    rel_change_arr = change_arr / capped_baseline
 
     decile_arr = np.array(decile)
-    weight_arr = np.array(household_weight)
     people_weighted = np.array(people_per_hh) * weight_arr
 
     intra_decile_deciles = {label: [] for label in _INTRA_LABELS}
@@ -258,8 +237,6 @@ def calculate_aggregate_impact(year: int = 2026) -> dict:
         "adjusted_gross_income", period=year, map_to="household"
     )
     agi_arr = np.array(agi)
-    change_arr = np.array(income_change)
-    affected_mask = np.abs(change_arr) > 1
 
     income_brackets = [
         (0, 25_000, "$0 - $25k"),
@@ -276,10 +253,10 @@ def calculate_aggregate_impact(year: int = 2026) -> dict:
         mask = (
             (agi_arr >= min_inc)
             & (agi_arr < max_inc)
-            & affected_mask
+            & beneficiary_mask
         )
-        bracket_affected = float(weight_arr[mask].sum())
-        if bracket_affected > 0:
+        bracket_beneficiaries = float(weight_arr[mask].sum())
+        if bracket_beneficiaries > 0:
             bracket_cost = float(
                 (change_arr[mask] * weight_arr[mask]).sum()
             )
@@ -291,7 +268,7 @@ def calculate_aggregate_impact(year: int = 2026) -> dict:
             bracket_avg = 0.0
         by_income_bracket.append({
             "bracket": label,
-            "beneficiaries": bracket_affected,
+            "beneficiaries": bracket_beneficiaries,
             "total_cost": bracket_cost,
             "avg_benefit": bracket_avg,
         })

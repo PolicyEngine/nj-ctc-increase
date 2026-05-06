@@ -1,20 +1,20 @@
 """
-Tests for the ut_tax_calc.household module.
+Tests for the nj_credit_calc.household module.
 
 These tests verify that the household-situation builder produces correct
-PolicyEngine-compatible dictionaries, defaulting to Utah (UT) for this
+PolicyEngine-compatible dictionaries, defaulting to New Jersey (NJ) for this
 dashboard.
 """
 
 import pytest
-from ut_tax_calc.household import build_household_situation
+from nj_credit_calc.household import build_household_situation
 
 
 class TestBuildHouseholdSituation:
     """Tests for build_household_situation()."""
 
-    def test_default_state_is_utah(self):
-        """state_code defaults to UT when not specified."""
+    def test_default_state_is_nj(self):
+        """state_code defaults to NJ when not specified."""
         situation = build_household_situation(
             age_head=30,
             age_spouse=None,
@@ -24,7 +24,7 @@ class TestBuildHouseholdSituation:
             max_earnings=500000,
             include_axes=False,
         )
-        assert situation["households"]["your household"]["state_code"]["2026"] == "UT"
+        assert situation["households"]["your household"]["state_code"]["2026"] == "NJ"
 
     def test_single_parent_with_one_child(self):
         situation = build_household_situation(
@@ -34,7 +34,7 @@ class TestBuildHouseholdSituation:
             income=20000,
             year=2026,
             max_earnings=500000,
-            state_code="UT",
+            state_code="NJ",
             include_axes=False,
         )
 
@@ -43,7 +43,7 @@ class TestBuildHouseholdSituation:
         assert "your first dependent" in situation["people"]
         assert situation["people"]["your first dependent"]["age"]["2026"] == 2
         assert "your partner" not in situation["people"]
-        assert situation["households"]["your household"]["state_code"]["2026"] == "UT"
+        assert situation["households"]["your household"]["state_code"]["2026"] == "NJ"
 
     def test_married_couple_with_two_children(self):
         situation = build_household_situation(
@@ -53,7 +53,7 @@ class TestBuildHouseholdSituation:
             income=30000,
             year=2026,
             max_earnings=500000,
-            state_code="UT",
+            state_code="NJ",
             include_axes=False,
         )
 
@@ -77,7 +77,7 @@ class TestBuildHouseholdSituation:
             income=35000,
             year=2026,
             max_earnings=500000,
-            state_code="UT",
+            state_code="NJ",
             include_axes=False,
         )
 
@@ -94,7 +94,7 @@ class TestBuildHouseholdSituation:
             income=30000,
             year=2026,
             max_earnings=500000,
-            state_code="UT",
+            state_code="NJ",
             include_axes=False,
         )
 
@@ -109,7 +109,7 @@ class TestBuildHouseholdSituation:
             income=20000,
             year=2026,
             max_earnings=500000,
-            state_code="UT",
+            state_code="NJ",
             include_axes=True,
         )
 
@@ -131,7 +131,7 @@ class TestBuildHouseholdSituation:
             income=20000,
             year=2026,
             max_earnings=500000,
-            state_code="UT",
+            state_code="NJ",
             include_axes=False,
         )
         assert "axes" not in situation
@@ -145,7 +145,7 @@ class TestBuildHouseholdSituation:
             income=1000000,
             year=2026,
             max_earnings=500000,
-            state_code="UT",
+            state_code="NJ",
             include_axes=True,
         )
         assert situation_high_income["axes"][0][0]["max"] == 1000000
@@ -157,7 +157,7 @@ class TestBuildHouseholdSituation:
             income=100000,
             year=2026,
             max_earnings=500000,
-            state_code="UT",
+            state_code="NJ",
             include_axes=True,
         )
         assert situation_high_max["axes"][0][0]["max"] == 500000
@@ -171,7 +171,7 @@ class TestBuildHouseholdSituation:
             income=50000,
             year=2026,
             max_earnings=500000,
-            state_code="UT",
+            state_code="NJ",
             include_axes=False,
         )
 

@@ -1,9 +1,8 @@
-"""
-Tests for the precomputed CSV data files.
+"""Tests for the precomputed CSV data files.
 
-These tests verify that the CSV files have the correct structure and
-can be parsed by the frontend. Only tax year 2026 is meaningful for the
-Utah 2026 tax changes dashboard.
+These tests verify that the per-variant CSVs (CTC, EITC, combined) have
+the correct structure and can be parsed by the frontend. Only tax year
+2026 is meaningful for the NJ CTC + EITC expansion dashboard.
 """
 
 import csv
@@ -14,6 +13,7 @@ import pytest
 
 DATA_DIR = Path(__file__).parent.parent / "frontend" / "public" / "data"
 EXPECTED_YEARS = [2026]
+VARIANTS = ("ctc", "eitc", "combined")
 EXPECTED_BRACKETS = {
     "$0 - $25k",
     "$25k - $50k",
@@ -25,55 +25,54 @@ EXPECTED_BRACKETS = {
 }
 
 
+def _load_csv(filename: str):
+    path = DATA_DIR / filename
+    if not path.exists():
+        pytest.skip(f"{filename} not generated yet")
+    with open(path, "r") as f:
+        return list(csv.DictReader(f))
+
+
+@pytest.mark.parametrize("variant", VARIANTS)
 class TestDistributionalImpactCSV:
-    """Tests for distributional_impact.csv."""
+    """Tests for distributional_impact_<variant>.csv."""
 
-    @pytest.fixture
-    def data(self):
-        filepath = DATA_DIR / "distributional_impact.csv"
-        if not filepath.exists():
-            pytest.skip("distributional_impact.csv not generated yet")
-        with open(filepath, "r") as f:
-            return list(csv.DictReader(f))
-
-    def test_has_required_columns(self, data):
+    def test_has_required_columns(self, variant):
+        data = _load_csv(f"distributional_impact_{variant}.csv")
         required = ["year", "decile", "average_change", "relative_change"]
         for row in data:
             for col in required:
                 assert col in row, f"Missing column: {col}"
 
-    def test_has_all_deciles(self, data):
+    def test_has_all_deciles(self, variant):
+        data = _load_csv(f"distributional_impact_{variant}.csv")
         for year in EXPECTED_YEARS:
             year_data = [r for r in data if int(r["year"]) == year]
             deciles = {r["decile"] for r in year_data}
             expected = {str(d) for d in range(1, 11)}
             assert deciles == expected, f"Missing deciles for year {year}"
 
-    def test_values_are_numeric(self, data):
+    def test_values_are_numeric(self, variant):
+        data = _load_csv(f"distributional_impact_{variant}.csv")
         for row in data:
             float(row["year"])
             float(row["average_change"])
             float(row["relative_change"])
 
 
+@pytest.mark.parametrize("variant", VARIANTS)
 class TestMetricsCSV:
-    """Tests for metrics.csv."""
+    """Tests for metrics_<variant>.csv."""
 
-    @pytest.fixture
-    def data(self):
-        filepath = DATA_DIR / "metrics.csv"
-        if not filepath.exists():
-            pytest.skip("metrics.csv not generated yet")
-        with open(filepath, "r") as f:
-            return list(csv.DictReader(f))
-
-    def test_has_required_columns(self, data):
+    def test_has_required_columns(self, variant):
+        data = _load_csv(f"metrics_{variant}.csv")
         required = ["year", "metric", "value"]
         for row in data:
             for col in required:
                 assert col in row, f"Missing column: {col}"
 
-    def test_has_required_metrics(self, data):
+    def test_has_required_metrics(self, variant):
+        data = _load_csv(f"metrics_{variant}.csv")
         required_metrics = [
             "budgetary_impact",
             "state_tax_revenue_impact",
@@ -91,34 +90,13 @@ class TestMetricsCSV:
                     f"Missing metric '{metric}' for year {year}"
                 )
 
-    def test_state_tax_revenue_impact_is_negative(self, data):
-        """SB60 + HB290 reduce Utah revenue; impact = current - reverted < 0."""
-        for year in EXPECTED_YEARS:
-            rows = [
-                r for r in data
-                if int(r["year"]) == year
-                and r["metric"] == "state_tax_revenue_impact"
-            ]
-            assert rows, f"No state_tax_revenue_impact row for {year}"
-            value = float(rows[0]["value"])
-            assert value < 0, (
-                f"Expected negative state_tax_revenue_impact for {year}, "
-                f"got {value}"
-            )
 
-
+@pytest.mark.parametrize("variant", VARIANTS)
 class TestWinnersLosersCSV:
-    """Tests for winners_losers.csv."""
+    """Tests for winners_losers_<variant>.csv."""
 
-    @pytest.fixture
-    def data(self):
-        filepath = DATA_DIR / "winners_losers.csv"
-        if not filepath.exists():
-            pytest.skip("winners_losers.csv not generated yet")
-        with open(filepath, "r") as f:
-            return list(csv.DictReader(f))
-
-    def test_has_required_columns(self, data):
+    def test_has_required_columns(self, variant):
+        data = _load_csv(f"winners_losers_{variant}.csv")
         required = [
             "year", "decile",
             "gain_more_5pct", "gain_less_5pct", "no_change",
@@ -128,14 +106,16 @@ class TestWinnersLosersCSV:
             for col in required:
                 assert col in row, f"Missing column: {col}"
 
-    def test_has_all_deciles_and_all(self, data):
+    def test_has_all_deciles_and_all(self, variant):
+        data = _load_csv(f"winners_losers_{variant}.csv")
         for year in EXPECTED_YEARS:
             year_data = [r for r in data if int(r["year"]) == year]
             deciles = {r["decile"] for r in year_data}
             expected = {"All"} | {str(d) for d in range(1, 11)}
             assert deciles == expected, f"Missing deciles for year {year}"
 
-    def test_values_sum_to_one(self, data):
+    def test_values_sum_to_one(self, variant):
+        data = _load_csv(f"winners_losers_{variant}.csv")
         for row in data:
             total = (
                 float(row["gain_more_5pct"])
@@ -147,24 +127,19 @@ class TestWinnersLosersCSV:
             assert abs(total - 1.0) < 0.01, f"Row does not sum to 1: {row}"
 
 
+@pytest.mark.parametrize("variant", VARIANTS)
 class TestIncomeBracketsCSV:
-    """Tests for income_brackets.csv."""
+    """Tests for income_brackets_<variant>.csv."""
 
-    @pytest.fixture
-    def data(self):
-        filepath = DATA_DIR / "income_brackets.csv"
-        if not filepath.exists():
-            pytest.skip("income_brackets.csv not generated yet")
-        with open(filepath, "r") as f:
-            return list(csv.DictReader(f))
-
-    def test_has_required_columns(self, data):
+    def test_has_required_columns(self, variant):
+        data = _load_csv(f"income_brackets_{variant}.csv")
         required = ["year", "bracket", "beneficiaries", "total_cost", "avg_benefit"]
         for row in data:
             for col in required:
                 assert col in row, f"Missing column: {col}"
 
-    def test_has_all_brackets(self, data):
+    def test_has_all_brackets(self, variant):
+        data = _load_csv(f"income_brackets_{variant}.csv")
         for year in EXPECTED_YEARS:
             year_data = [r for r in data if int(r["year"]) == year]
             brackets = {r["bracket"] for r in year_data}
@@ -173,18 +148,12 @@ class TestIncomeBracketsCSV:
             )
 
 
+@pytest.mark.parametrize("variant", VARIANTS)
 class TestCongressionalDistrictsCSV:
-    """Tests for congressional_districts.csv (Utah only)."""
+    """Tests for congressional_districts_<variant>.csv (NJ only)."""
 
-    @pytest.fixture
-    def data(self):
-        filepath = DATA_DIR / "congressional_districts.csv"
-        if not filepath.exists():
-            pytest.skip("congressional_districts.csv not generated yet")
-        with open(filepath, "r") as f:
-            return list(csv.DictReader(f))
-
-    def test_has_required_columns(self, data):
+    def test_has_required_columns(self, variant):
+        data = _load_csv(f"congressional_districts_{variant}.csv")
         required = [
             "district",
             "average_household_income_change",
@@ -196,15 +165,17 @@ class TestCongressionalDistrictsCSV:
             for col in required:
                 assert col in row, f"Missing column: {col}"
 
-    def test_utah_only(self, data):
-        """All rows must be Utah districts."""
+    def test_new_jersey_only(self, variant):
+        """All rows must be NJ districts."""
+        data = _load_csv(f"congressional_districts_{variant}.csv")
         states = {r["state"] for r in data}
-        assert states == {"UT"}, f"Expected only UT rows, got {states}"
+        assert states == {"NJ"}, f"Expected only NJ rows, got {states}"
 
-    def test_four_districts(self, data):
-        """Utah has 4 congressional districts."""
+    def test_twelve_districts(self, variant):
+        """New Jersey has 12 congressional districts."""
+        data = _load_csv(f"congressional_districts_{variant}.csv")
         districts = {r["district"] for r in data}
-        expected = {f"UT-0{d}" for d in range(1, 5)}
+        expected = {f"NJ-{d:02d}" for d in range(1, 13)}
         assert districts == expected, (
-            f"Expected Utah districts UT-01..UT-04, got {districts}"
+            f"Expected NJ-01..NJ-12, got {districts}"
         )

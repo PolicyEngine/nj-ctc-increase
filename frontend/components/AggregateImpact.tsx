@@ -183,7 +183,7 @@ export default function AggregateImpact({ triggered }: Props) {
             <h3 className="text-lg font-semibold text-gray-800 mb-3">
               Revenue change ({selectedYear})
             </h3>
-            <div className="max-w-md">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className={`rounded-lg p-5 border ${
                 data.budget.state_tax_revenue_impact >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
               }`}>
@@ -195,6 +195,19 @@ export default function AggregateImpact({ triggered }: Props) {
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   Change in New Jersey state tax collections
+                </p>
+              </div>
+              <div className={`rounded-lg p-5 border ${
+                data.total_cost >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
+              }`}>
+                <p className="text-sm text-gray-700 mb-2">Total household impact</p>
+                <p className={`text-2xl font-bold ${
+                  data.total_cost >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {formatBillions(data.total_cost)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Net gain to New Jersey households
                 </p>
               </div>
             </div>

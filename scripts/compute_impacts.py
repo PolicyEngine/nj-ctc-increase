@@ -1,26 +1,24 @@
-"""
-Compute Utah-wide impacts for the 2026 Utah tax changes.
-Outputs CSV files for the dashboard.
+"""Compute New Jersey-wide impacts for the CTC + EITC expansion.
 
-Uses the ut_tax_calc module which loads the pre-2026-values inverse reform
-and runs Microsimulation against the Utah state dataset.
+Outputs CSV files for the dashboard. Uses the nj_credit_calc module to
+run Microsimulation against the New Jersey state dataset for the
+selected forward-reform variant (default: combined).
 """
 
 import sys
 import os
 
-# Add parent directory to path so we can import ut_tax_calc
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
-from ut_tax_calc.microsimulation import calculate_aggregate_impact
+from nj_credit_calc.microsimulation import calculate_aggregate_impact
 
 OUTPUT_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "frontend", "public", "data"
 )
 
-# Only 2026 is meaningful for the Utah 2026 tax changes.
+# Only 2026 is meaningful for the NJ expansion.
 YEARS = [2026]
 
 

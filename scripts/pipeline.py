@@ -1,7 +1,8 @@
-"""Data generation pipeline for the Utah 2026 tax changes dashboard.
+"""Data generation pipeline for the NJ CTC + EITC expansion dashboard.
 
-Runs the ut_tax_calc microsimulation for tax year 2026 against the
-Utah state dataset and saves output to frontend/public/data/ as CSVs.
+Runs the nj_credit_calc microsimulation for tax year 2026 against the
+New Jersey state dataset and saves output to frontend/public/data/ as
+CSVs.
 
 Uses subprocess isolation per year to prevent memory accumulation
 (kept from the upstream template even though only one year is run).
@@ -27,7 +28,7 @@ DEFAULT_OUTPUT_DIR = os.path.join(
     "data",
 )
 
-# Utah 2026 tax changes only take effect in 2026 — no budget-window sweep.
+# NJ CTC + EITC expansion takes effect in 2026 — no budget-window sweep.
 YEARS = [2026]
 
 
