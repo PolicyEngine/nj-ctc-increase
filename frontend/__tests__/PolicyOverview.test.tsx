@@ -31,8 +31,12 @@ describe('PolicyOverview', () => {
 
   it('shows sources links', () => {
     render(<PolicyOverview />);
-    expect(screen.getByText(/S-4531 \(P\.L\.2026, c\.26\)/)).toBeInTheDocument();
-    expect(screen.getByText(/OLS fiscal estimate/)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /S-4531 \(P\.L\.2026, c\.26\)/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /OLS fiscal estimate/ }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('NJ Treasury FY2027 tax expenditure report (item 63)'),
     ).toBeInTheDocument();
