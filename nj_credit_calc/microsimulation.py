@@ -8,9 +8,8 @@ already includes the increase, so the *baseline* sim applies the
 prior-law counterfactual and the *reform* sim is plain current law.
 Impact = reform - baseline (positive = gain for households).
 
-This is a local convenience mirror of ``scripts/modal_pipeline.py``
-(which runs on the Populace NJ slice); use it for notebooks and quick
-checks.
+This is a local convenience mirror of ``scripts/modal_pipeline.py``;
+use it for notebooks and quick checks.
 """
 
 import numpy as np

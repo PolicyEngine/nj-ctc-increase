@@ -220,9 +220,10 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
       {/* Methodology note */}
       <p className="text-xs text-gray-500">
         District estimates use PolicyEngine&apos;s district-calibrated
-        datasets (~9,000 households per district), while the statewide tab
-        uses the newer Populace dataset, so district figures do not exactly
-        aggregate to the statewide figures.
+        datasets (~9,000 households per district), from the same enhanced
+        CPS family as the statewide estimates. District figures may not
+        exactly aggregate to statewide figures because each district file
+        is calibrated independently.
       </p>
     </div>
   );

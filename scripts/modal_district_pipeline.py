@@ -12,12 +12,11 @@ the enacted 25% bracket increase for 2026-2028):
   bracket amounts restored for 2026-2028), and
 - reform sim: plain current law (the enacted increase).
 
-Dataset note: the district runs stay on the legacy per-district
-calibrated files (``policyengine-us-data/districts/NJ-XX.h5``,
-~9k households each) rather than the Populace slices the statewide
-pipeline uses, because Populace carries only ~130 raw households per
-NJ district — too few for stable district-level estimates. District
-figures therefore do not exactly aggregate to the statewide figures.
+Dataset note: the district runs use the per-district calibrated files
+(``policyengine-us-data/districts/NJ-XX.h5``, ~9k households each),
+the same enhanced-CPS family as the statewide pipeline. Each district
+file is calibrated independently, so district figures may not exactly
+aggregate to the statewide figures.
 
 Usage:
     modal run scripts/modal_district_pipeline.py

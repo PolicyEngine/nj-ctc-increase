@@ -9,13 +9,14 @@ backwards from the usual pattern:
   amounts restored to their pre-increase values for 2026-2028), and
 - reform sim: plain current law (the enacted increase).
 
-Runs against the NJ slice of the pinned Populace national dataset,
-built onto the ``nj-ctc-populace-slices`` Volume by
-``scripts/build_populace_nj_slice.py``, and writes CSVs to
+Runs against the ECPS state file (``states/NJ.h5``) — the same dataset
+family as the district pipeline. ECPS matches NJ Treasury's
+administrative CTC actuals almost exactly ($220.5M vs $220.7M outlay;
+242k vs 232.5k claims) and its ~110k-household sample resolves the
+poverty impact of this modest credit change. Writes CSVs to
 ``frontend/public/data/``.
 
 Usage:
-    modal run scripts/build_populace_nj_slice.py   # once per revision bump
     modal run scripts/modal_pipeline.py
 """
 
@@ -53,11 +54,9 @@ image = (
 
 YEAR = 2026
 
-# Same pins as scripts/build_populace_nj_slice.py.
-POPULACE_REVISION = "053baf6cf56aaf1160e2f1bfe7631c6924d46b2e"  # 2026-07-01
-NJ_SLICE_PATH = f"/slices/{POPULACE_REVISION[:8]}/NJ.h5"
-
-volume = modal.Volume.from_name("nj-ctc-populace-slices", create_if_missing=True)
+# ECPS state file — same dataset family as the district pipeline's
+# districts/NJ-XX.h5 files.
+NJ_DATASET = "hf://policyengine/policyengine-us-data/states/NJ.h5"
 
 
 def _load_prior_law() -> dict:
@@ -119,14 +118,12 @@ def _build_reform_from_overrides(overrides: dict):
     memory=16384,
     timeout=1800,
     retries=1,
-    volumes={"/slices": volume},
 )
 def calculate_impacts() -> dict:
     """Run the NJ state-level microsim (prior law vs enacted law) and
     return distributional / fiscal / poverty / bracket breakdowns."""
     import numpy as np
     from policyengine_us import Microsimulation
-    from policyengine_us.data import USSingleYearDataset
 
     print(f"Starting NJ enacted-CTC calculation for {YEAR}...")
 
@@ -141,13 +138,10 @@ def calculate_impacts() -> dict:
 
     prior_law = _build_reform_from_overrides(_load_prior_law())
 
-    def _dataset():
-        return USSingleYearDataset(file_path=NJ_SLICE_PATH)
-
-    print("  Loading baseline (prior law) sim on NJ Populace slice...")
-    sim_baseline = Microsimulation(dataset=_dataset(), reform=prior_law)
-    print("  Loading reform (enacted current law) sim on NJ Populace slice...")
-    sim_reform = Microsimulation(dataset=_dataset())
+    print("  Loading baseline (prior law) sim on ECPS NJ dataset...")
+    sim_baseline = Microsimulation(dataset=NJ_DATASET, reform=prior_law)
+    print("  Loading reform (enacted current law) sim on ECPS NJ dataset...")
+    sim_reform = Microsimulation(dataset=NJ_DATASET)
 
     # Sanity: the enacted increase must actually be present in the
     # pinned policyengine-us release, or every impact is silently zero.
@@ -510,7 +504,7 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     print(f"Running NJ enacted-CTC pipeline on Modal (year {YEAR})...")
-    print(f"Dataset: Populace NJ slice {NJ_SLICE_PATH}")
+    print(f"Dataset: {NJ_DATASET}")
     print(f"Output: {output_dir}")
 
     result = calculate_impacts.remote()
