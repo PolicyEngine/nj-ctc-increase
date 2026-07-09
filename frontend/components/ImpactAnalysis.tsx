@@ -50,19 +50,14 @@ export default function ImpactAnalysis({
 
   if (error) {
     const errorMessage = (error as Error).message;
-    const isApiNotUpdated = errorMessage.includes('500') || errorMessage.includes('too many values');
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
         <h2 className="text-yellow-800 font-semibold mb-2">Household calculator temporarily unavailable</h2>
-        {isApiNotUpdated ? (
-          <p className="text-yellow-700">
-            The PolicyEngine API is being updated to reflect the enacted
-            New Jersey CTC increase. Please check back soon, or view the{' '}
-            <strong>Statewide</strong> tab for precomputed results.
-          </p>
-        ) : (
-          <p className="text-yellow-700">{errorMessage}</p>
-        )}
+        <p className="text-yellow-700">{errorMessage}</p>
+        <p className="text-yellow-700 mt-2">
+          Please retry in a moment, or view the <strong>Statewide</strong>{' '}
+          tab for precomputed results.
+        </p>
       </div>
     );
   }

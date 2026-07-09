@@ -20,11 +20,19 @@ class via a manual ``modify_parameters`` walker.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict
 
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+# NJ_CTC_REPO_ROOT overrides where the reform JSONs live — used by the
+# Modal household endpoint, where this package mounts away from the
+# repository root.
+REPO_ROOT = Path(
+    os.environ.get(
+        "NJ_CTC_REPO_ROOT", Path(__file__).resolve().parent.parent
+    )
+)
 
 REFORM_PATHS: Dict[str, Path] = {
     "prior_law": REPO_ROOT / "reform_prior_law.json",

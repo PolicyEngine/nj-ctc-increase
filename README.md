@@ -14,6 +14,13 @@ pre-increase amounts restored for 2026-2028; reform = plain current
 law**. Impact = reform − baseline.
 
 - **Frontend**: `frontend/` (Next.js / Tailwind)
+- **Household calculator backend**: `scripts/modal_household_endpoint.py`
+  — spawn-and-poll Modal app (CPID pattern) pinned to the same
+  policyengine-us as the pipelines, so the calculator never depends on
+  what api.policyengine.org has deployed. Deploy with
+  `modal deploy scripts/modal_household_endpoint.py`; the printed URL
+  goes in `NEXT_PUBLIC_MODAL_NJ_URL` (frontend `.env.local` and the
+  Vercel project env).
 - **Modal pipelines**:
   - `scripts/build_populace_nj_slice.py` — one-time NJ slice of the
     pinned Populace dataset (run per revision bump)
@@ -42,10 +49,12 @@ bump:
 1. `modal run scripts/build_populace_nj_slice.py`
 2. `modal run scripts/modal_pipeline.py`
 3. `modal run scripts/modal_district_pipeline.py`
-4. Once api.policyengine.org deploys a release ≥ 1.768.2:
-   `uv run --with requests scripts/compute_example_households.py`
-   (the example-households section stays hidden until this JSON
-   exists; before the API updates, it would compute all-zero impacts)
+4. `uv run scripts/compute_example_households.py` — computes locally
+   with the pinned policyengine-us (no API dependency) and writes
+   `frontend/public/data/example_households.json`.
+5. `modal deploy scripts/modal_household_endpoint.py` — redeploy the
+   household backend whenever the pin or `nj_credit_calc` changes
+   (bump `BUILD_REV` so cached results don't leak across builds).
 
 Both pipelines fail loudly if the pinned release does not contain the
 enacted increase (baseline CTC totals would equal current-law totals).
