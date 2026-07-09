@@ -45,13 +45,13 @@ export default function PolicyOverview() {
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h3 className="font-semibold text-gray-800 mb-2">Cost</h3>
             <p className="text-sm text-gray-600">
-              The NJ Treasury&apos;s FY2027 tax expenditure report estimates
-              the credit costs $207.4 million under prior law, implying
-              roughly $52 million per year in additional outlays from the
-              25% increase (about $260 million in total credits).
-              PolicyEngine&apos;s microsimulation estimates a similar
-              baseline ($216 million in 2026, about 237,000 recipient tax
-              units averaging $912).
+              The Office of Legislative Services estimates the increase
+              reduces state revenue by $51.9 million in FY2027, $50.3
+              million in FY2028, and $48.7 million in FY2029 (Treasury
+              estimates $50.0 million for FY2027) — 25% of the credit&apos;s
+              $207.4 million prior-law cost. Treasury reports 232,500
+              credits claimed for tax year 2024. PolicyEngine&apos;s
+              microsimulation estimates a similar baseline.
             </p>
           </div>
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
@@ -128,22 +128,23 @@ export default function PolicyOverview() {
             <ul className="text-sm text-gray-700 space-y-1">
               <li>
                 <a
-                  href="https://www.njleg.state.nj.us/bill-search/2026/S4531"
+                  href="https://pub.njleg.state.nj.us/Bills/2026/S5000/4531_I1.PDF"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary-600 hover:underline"
                 >
-                  S-4531 (P.L.2026, c.26)
+                  S-4531 (P.L.2026, c.26) &mdash; text amending
+                  N.J.S.A. 54A:4-17.1
                 </a>
               </li>
               <li>
                 <a
-                  href="https://law.justia.com/codes/new-jersey/2022/title-54a/section-54a-4-17-1/"
+                  href="https://pub.njleg.state.nj.us/Bills/2026/S5000/4531_F1.PDF"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary-600 hover:underline"
                 >
-                  N.J. Stat. § 54A:4-17.1 &mdash; Child tax credit
+                  OLS fiscal estimate ($51.9M FY2027)
                 </a>
               </li>
             </ul>
@@ -165,7 +166,7 @@ export default function PolicyOverview() {
               </li>
               <li>
                 <a
-                  href="https://www.nj.gov/treasury/taxation/pdf/taxexpenditurereport2027.pdf"
+                  href="https://www.nj.gov/treasury/taxation/pdf/taxexpenditurereport2027.pdf#page=44"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary-600 hover:underline"
