@@ -1,11 +1,13 @@
 /**
  * Build a PolicyEngine household situation for the PE API.
  *
- * For the NJ Cash Alliance CTC + EITC expansion dashboard:
- * - The PolicyEngine baseline represents current NJ law.
- * - The "reform" applies the combined NJ CTC + EITC expansion (the most
- *   impactful variant) so the household calculator shows
- *   impact = reform - baseline (positive = household gains).
+ * For the enacted NJ CTC increase dashboard (S-4531 / P.L.2026, c.26):
+ * - Current law on the PE API already includes the enacted 25% bracket
+ *   increase for 2026-2028, so it plays the "reform" role.
+ * - The "baseline" applies the prior-law counterfactual (pre-increase
+ *   bracket amounts restored for 2026-2028), so the household calculator
+ *   shows impact = current law - prior law (positive = household gains
+ *   from the enacted increase).
  */
 
 import type { HouseholdRequest } from "./types";
@@ -13,31 +15,26 @@ import type { HouseholdRequest } from "./types";
 const GROUP_UNITS = ["families", "spm_units", "tax_units", "households"] as const;
 
 /**
- * Combined NJ CTC + EITC reform policy parameters for the PE API.
- * Mirrors reform_combined.json so the household calculator ships the
- * policy with the bundle.
+ * Prior-law counterfactual policy parameters for the PE API.
+ * Mirrors reform_prior_law.json so the household calculator ships the
+ * policy with the bundle. 2029+ needs no override because current law
+ * reverts to these amounts on its own.
  */
-const REFORM_POLICY: Record<string, Record<string, number>> = {
+const PRIOR_LAW_POLICY: Record<string, Record<string, number>> = {
   "gov.states.nj.tax.income.credits.ctc.amount[0].amount": {
-    "2026-01-01.2100-12-31": 1500,
+    "2026-01-01.2028-12-31": 1000,
   },
   "gov.states.nj.tax.income.credits.ctc.amount[1].amount": {
-    "2026-01-01.2100-12-31": 1000,
+    "2026-01-01.2028-12-31": 800,
   },
   "gov.states.nj.tax.income.credits.ctc.amount[2].amount": {
-    "2026-01-01.2100-12-31": 750,
+    "2026-01-01.2028-12-31": 600,
   },
   "gov.states.nj.tax.income.credits.ctc.amount[3].amount": {
-    "2026-01-01.2100-12-31": 500,
+    "2026-01-01.2028-12-31": 400,
   },
   "gov.states.nj.tax.income.credits.ctc.amount[4].amount": {
-    "2026-01-01.2100-12-31": 250,
-  },
-  "gov.states.nj.tax.income.credits.ctc.age_limit": {
-    "2026-01-01.2100-12-31": 12,
-  },
-  "gov.states.nj.tax.income.credits.eitc.match": {
-    "2026-01-01.2100-12-31": 0.5,
+    "2026-01-01.2028-12-31": 200,
   },
 };
 
@@ -136,12 +133,12 @@ export function buildHouseholdSituation(
 }
 
 /**
- * Build the combined NJ CTC + EITC expansion reform policy dict for the PE API.
+ * Build the prior-law counterfactual policy dict for the PE API.
  * Used by the household calculator to compute:
- *   impact = reform (NJ Cash Alliance combined expansion) - baseline (current NJ law)
+ *   impact = current law (enacted increase) - prior law (this policy)
  */
-export function buildReformPolicy(): Record<string, Record<string, number>> {
-  return REFORM_POLICY;
+export function buildPriorLawPolicy(): Record<string, Record<string, number>> {
+  return PRIOR_LAW_POLICY;
 }
 
 /**

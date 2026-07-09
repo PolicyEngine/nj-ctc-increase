@@ -191,7 +191,7 @@ export default function NJDistrictChoroplethMap({
         const basePath =
           process.env.NEXT_PUBLIC_BASE_PATH !== undefined
             ? process.env.NEXT_PUBLIC_BASE_PATH
-            : '/us/nj-ctc-eitc-expansion';
+            : '/us/nj-ctc-increase';
         const res = await fetch(`${basePath}/${GEOJSON_PATH}`);
         if (!res.ok) throw new Error(`Failed to load geojson (${res.status})`);
         const json = (await res.json()) as GeoCollection;

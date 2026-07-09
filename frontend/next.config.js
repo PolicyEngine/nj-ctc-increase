@@ -4,7 +4,7 @@ const path = require('path');
 // Use empty string for local dev (NEXT_PUBLIC_BASE_PATH=""), otherwise default to production path
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH !== undefined
   ? process.env.NEXT_PUBLIC_BASE_PATH
-  : "/us/nj-ctc-eitc-expansion";
+  : "/us/nj-ctc-increase";
 
 const nextConfig = {
   ...(basePath ? { basePath } : {}),

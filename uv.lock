@@ -1003,6 +1003,31 @@ wheels = [
 ]
 
 [[package]]
+name = "nj-ctc-increase"
+version = "1.0.0"
+source = { editable = "." }
+dependencies = [
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "policyengine-us" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "numpy", specifier = ">=1.24.0" },
+    { name = "policyengine-us", specifier = "==1.768.2" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
+]
+provides-extras = ["dev"]
+
+[[package]]
 name = "numexpr"
 version = "2.14.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1449,7 +1474,7 @@ wheels = [
 
 [[package]]
 name = "policyengine-us"
-version = "1.685.0"
+version = "1.768.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "microdf-python" },
@@ -1461,9 +1486,9 @@ dependencies = [
     { name = "tables", version = "3.11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/0f/94d01bebd1a3f9df7adf489f851ee7e80dc31fef215bb3452bc4100f9313/policyengine_us-1.685.0.tar.gz", hash = "sha256:63a461feca0bad079cc04f5fd36cb50248a6c51521ac6b37b5aaa9063d702ca4", size = 9448108, upload-time = "2026-05-05T11:51:21.977Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2e/c8/0696a650ce45f5f76ed60cc780da87d167080b26069b34266f3229950671/policyengine_us-1.768.2.tar.gz", hash = "sha256:de503b70e84fede81fb9d267b93f129e2dc5ecfc24a8a1d41bca65a6bc5fbfae", size = 11212081, upload-time = "2026-07-09T15:46:11.967Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/44/8c/85a49ceae0b9e33011ed895131fbced96f97a08738cb79db741f586ed329/policyengine_us-1.685.0-py3-none-any.whl", hash = "sha256:93a681b48b220128c39fb6d9a344ebd3ce8ad910f993735cc845b0930d1f5b56", size = 9923328, upload-time = "2026-05-05T11:51:18.269Z" },
+    { url = "https://files.pythonhosted.org/packages/70/28/913a9a677a0af02f0a8e523c7c46638d07de09cd30a243b4edacc81d5ed0/policyengine_us-1.768.2-py3-none-any.whl", hash = "sha256:1f7dc5ae40aca9f9669ea04de1c8cda8db7c64a276431222ee3872493e513499", size = 13340736, upload-time = "2026-07-09T15:46:08.939Z" },
 ]
 
 [[package]]
@@ -1966,31 +1991,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/35/12/06f87be706ccc5794
 wheels = [
     { url = "https://files.pythonhosted.org/packages/65/a8/1791660a87f03d10a3bce00401a66035999c91f5a9a6987569b84df5719d/us-3.2.0-py3-none-any.whl", hash = "sha256:571714ad6d473c72bbd2058a53404cdf4ecc0129e4f19adfcbeb4e2d7e3dc3e7", size = 13775, upload-time = "2024-07-22T01:09:41.432Z" },
 ]
-
-[[package]]
-name = "utah-2026-tax-changes"
-version = "1.0.0"
-source = { editable = "." }
-dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "policyengine-us" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "numpy", specifier = ">=1.24.0" },
-    { name = "policyengine-us", specifier = ">=1.150.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
-]
-provides-extras = ["dev"]
 
 [[package]]
 name = "wcwidth"

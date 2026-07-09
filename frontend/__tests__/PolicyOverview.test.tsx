@@ -1,42 +1,44 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import PolicyOverview from '../components/PolicyOverview';
 
-// Mock ResizeObserver for Recharts
-vi.mock('recharts', async () => {
-  const actual = await vi.importActual<typeof import('recharts')>('recharts');
-  return {
-    ...actual,
-    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="responsive-container">{children}</div>
-    ),
-  };
-});
-
 describe('PolicyOverview', () => {
-  it('renders without errors', () => {
+  it('renders the enacted-law heading', () => {
     render(<PolicyOverview />);
-    expect(screen.getByText('Working Parents Tax Relief Act')).toBeInTheDocument();
+    expect(
+      screen.getByText("New Jersey's enacted Child Tax Credit increase"),
+    ).toBeInTheDocument();
   });
 
-  it('displays the three policy provision cards', () => {
+  it('displays the four summary cards', () => {
     render(<PolicyOverview />);
-    expect(screen.getByText('Credit boost (1 child)')).toBeInTheDocument();
-    expect(screen.getByText('Credit boost (2+ children)')).toBeInTheDocument();
-    expect(screen.getByText('Phaseout adjustment')).toBeInTheDocument();
+    expect(screen.getByText('What changed')).toBeInTheDocument();
+    expect(screen.getByText('Effective 2026–2028')).toBeInTheDocument();
+    expect(screen.getByText('Cost')).toBeInTheDocument();
+    expect(screen.getByText('Who benefits')).toBeInTheDocument();
   });
 
-  it('displays the EITC parameters table', () => {
+  it('displays the credit amounts table with all five brackets', () => {
     render(<PolicyOverview />);
-    expect(screen.getByText('EITC parameter changes for parents of young children')).toBeInTheDocument();
-    expect(screen.getByText('One young child')).toBeInTheDocument();
-    expect(screen.getByText('Two young children')).toBeInTheDocument();
-    expect(screen.getByText('Three young children')).toBeInTheDocument();
+    expect(
+      screen.getByText('Credit amounts per child (tax years 2026–2028)'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('$30,000 or less')).toBeInTheDocument();
+    expect(screen.getByText('$60,001 – $80,000')).toBeInTheDocument();
+    expect(screen.getByText('$1,250')).toBeInTheDocument();
+    expect(screen.getByText('+$250')).toBeInTheDocument();
   });
 
   it('shows sources links', () => {
     render(<PolicyOverview />);
-    expect(screen.getByText('policyengine-us PR #7914')).toBeInTheDocument();
-    expect(screen.getByText('IRC Section 32')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /S-4531 \(P\.L\.2026, c\.26\)/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /OLS fiscal estimate/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('NJ Treasury FY2027 tax expenditure report (item 63)'),
+    ).toBeInTheDocument();
   });
 });

@@ -50,19 +50,14 @@ export default function ImpactAnalysis({
 
   if (error) {
     const errorMessage = (error as Error).message;
-    const isApiNotUpdated = errorMessage.includes('500') || errorMessage.includes('too many values');
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
         <h2 className="text-yellow-800 font-semibold mb-2">Household calculator temporarily unavailable</h2>
-        {isApiNotUpdated ? (
-          <p className="text-yellow-700">
-            The PolicyEngine API is being updated to reflect the New Jersey
-            CTC + EITC expansion. Please check back soon, or view the{' '}
-            <strong>Statewide</strong> tab for precomputed results.
-          </p>
-        ) : (
-          <p className="text-yellow-700">{errorMessage}</p>
-        )}
+        <p className="text-yellow-700">{errorMessage}</p>
+        <p className="text-yellow-700 mt-2">
+          Please retry in a moment, or view the <strong>Statewide</strong>{' '}
+          tab for precomputed results.
+        </p>
       </div>
     );
   }
@@ -184,11 +179,11 @@ export default function ImpactAnalysis({
       {/* Personal impact */}
       <div>
         <h3 className="text-xl font-bold text-gray-800 mb-4">
-          Your personal impact from the NJ Cash Alliance CTC + EITC expansion ({request?.year ?? 2026})
+          Your personal impact from the enacted NJ CTC increase ({request?.year ?? 2026})
         </h3>
         <p className="text-gray-600 mb-4">
           Based on your employment income of <strong>{formatCurrency(request?.income ?? 0)}</strong>,
-          comparing current law (2026) to pre-2026 law.
+          comparing the enacted 25% credit increase to prior law.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -203,10 +198,10 @@ export default function ImpactAnalysis({
       {/* Chart */}
       <div className="bg-white border rounded-lg p-6">
         <h3 className="text-lg font-semibold mb-1 text-gray-800">
-          Change in net income from the NJ Cash Alliance CTC + EITC expansion
+          Change in net income from the enacted NJ CTC increase
         </h3>
         <p className="text-sm text-gray-500 mb-4">
-          Current law (2026) vs. pre-2026 law, by employment income
+          Enacted law vs. prior law (2026), by employment income
         </p>
         <ResponsiveContainer width="100%" height={400}>
             <LineChart data={chartData} margin={{ left: 20, right: 20, top: 5, bottom: 5 }}>

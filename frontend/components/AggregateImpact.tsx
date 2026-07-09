@@ -4,9 +4,6 @@ import { useState } from 'react';
 import {
   useAggregateImpact,
   NJ_DASHBOARD_YEAR,
-  REFORM_VARIANTS,
-  REFORM_VARIANT_LABELS,
-  type ReformVariant,
 } from '@/hooks/useAggregateImpact';
 import {
   BarChart,
@@ -70,10 +67,8 @@ interface Props {
 
 export default function AggregateImpact({ triggered }: Props) {
   const selectedYear = NJ_DASHBOARD_YEAR;
-  const [variant, setVariant] = useState<ReformVariant>('combined');
   const { data, isLoading, error } = useAggregateImpact(
     triggered,
-    variant,
     selectedYear,
   );
   const [activeSection, setActiveSection] = useState<
@@ -136,27 +131,8 @@ export default function AggregateImpact({ triggered }: Props) {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-primary">New Jersey impact analysis</h2>
       <p className="text-sm text-gray-600">
-        Tax year {selectedYear}. Reform: <strong>{REFORM_VARIANT_LABELS[variant]}</strong> vs. current law.
+        Tax year {selectedYear}. Enacted 25% CTC increase (P.L.2026, c.26) vs. prior law.
       </p>
-
-      {/* Reform variant selector */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-gray-700">Reform variant:</span>
-        {REFORM_VARIANTS.map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => setVariant(v)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              variant === v
-                ? 'bg-primary-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {REFORM_VARIANT_LABELS[v]}
-          </button>
-        ))}
-      </div>
 
       {/* Sub-navigation */}
       <div className="flex flex-wrap gap-2">
@@ -245,7 +221,13 @@ export default function AggregateImpact({ triggered }: Props) {
               </table>
             </div>
             <p className="text-xs text-gray-500 mt-3 italic">
-              Income brackets use an expanded income measure at the tax unit level, following JCT methodology. Expanded income includes AGI plus tax-exempt interest, employer payroll taxes, workers&apos; compensation, nontaxable Social Security benefits, and foreign earned income exclusion. A tax unit is the unit that files a tax return (single filer or married couple filing jointly).
+              Tax units are grouped by New Jersey taxable income &mdash; the
+              credit&apos;s eligibility measure &mdash; using the statute&apos;s own
+              tiers, so no impact appears above the $80,000 ceiling. A tax
+              unit is the unit that files a tax return (single filer or
+              married couple filing jointly). Total impact here is the
+              change in NJ CTC paid, which differs slightly from the
+              household-level budgetary figures on the other tabs.
             </p>
           </div>
         </div>
@@ -410,7 +392,7 @@ export default function AggregateImpact({ triggered }: Props) {
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-3 italic">
-                  Winners and losers are calculated at the household level. A household may contain multiple tax units (e.g., an adult child living with parents who files separately). Some households in higher income deciles may see gains because one tax unit within the household qualifies for the expanded NJ CTC or EITC match while others do not.
+                  Winners and losers are calculated at the household level. A household may contain multiple tax units (e.g., an adult child living with parents who files separately). Some households in higher income deciles may see gains because one tax unit within the household qualifies for the increased NJ CTC while others do not.
                 </p>
               </div>
             </div>
@@ -464,7 +446,7 @@ export default function AggregateImpact({ triggered }: Props) {
               </h3>
               <p className="text-gray-700 mb-3">
                 Percent change in Supplemental Poverty Measure rates under
-                the {REFORM_VARIANT_LABELS[variant]} reform vs. current law,
+                the enacted CTC increase vs. prior law,
                 tax year {selectedYear}.
               </p>
               <ResponsiveContainer width="100%" height={360}>
@@ -500,11 +482,11 @@ export default function AggregateImpact({ triggered }: Props) {
               </ResponsiveContainer>
               <ChartWatermark />
               <p className="text-xs text-gray-500 mt-2">
-                Negative values mean the reform lowers poverty vs. current
-                law. Both the CTC expansion and the EITC expansion deliver
-                refundable credits to low-income NJ households, which
-                reduces measured poverty under the Supplemental Poverty
-                Measure.
+                Negative values mean the enacted increase lowers poverty
+                vs. prior law. The NJ CTC is a refundable credit for
+                low- and moderate-income families with young children,
+                so raising it reduces measured poverty under the
+                Supplemental Poverty Measure.
               </p>
             </div>
           </div>

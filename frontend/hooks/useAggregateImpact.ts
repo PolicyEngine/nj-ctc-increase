@@ -2,40 +2,28 @@ import { useQuery } from "@tanstack/react-query";
 import parseCSV from "@/lib/parseCSV";
 import { AggregateImpactResponse, IntraDecileAll, IntraDecileDeciles } from "@/lib/types";
 
-// NJ CTC + EITC expansion dashboard — year is locked to 2026 throughout.
+// Enacted NJ CTC increase dashboard — year is locked to 2026 throughout.
 export const NJ_DASHBOARD_YEAR = 2026;
-
-/** Reform variants surfaced on the Statewide and Districts tabs. The
- * Modal pipelines emit per-variant CSVs suffixed with these keys. */
-export type ReformVariant = "ctc" | "eitc" | "combined";
-
-export const REFORM_VARIANTS: ReformVariant[] = ["ctc", "eitc", "combined"];
-export const REFORM_VARIANT_LABELS: Record<ReformVariant, string> = {
-  ctc: "CTC expansion only",
-  eitc: "EITC expansion only",
-  combined: "Combined CTC + EITC",
-};
 
 async function fetchCSV(filename: string): Promise<Record<string, string | number>[]> {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH !== undefined
     ? process.env.NEXT_PUBLIC_BASE_PATH
-    : "/us/nj-ctc-eitc-expansion";
+    : "/us/nj-ctc-increase";
   const res = await fetch(`${basePath}/data/${filename}`);
   if (!res.ok) throw new Error(`Failed to load ${filename}`);
   const text = await res.text();
   return parseCSV(text);
 }
 
-/** Fetch the per-variant congressional_districts CSV for NJ. */
+/** Fetch the congressional_districts CSV for NJ. */
 export function useNJDistrictImpact(
   enabled: boolean,
-  variant: ReformVariant,
   year: number = NJ_DASHBOARD_YEAR,
 ) {
   return useQuery<Record<string, string | number>[]>({
-    queryKey: ["njDistrictImpact", variant, year],
+    queryKey: ["njDistrictImpact", year],
     queryFn: async () => {
-      const rows = await fetchCSV(`congressional_districts_${variant}.csv`);
+      const rows = await fetchCSV(`congressional_districts.csv`);
       return rows.filter(
         (r) => r.state === "NJ" && Number(r.year) === year,
       );
@@ -47,14 +35,13 @@ export function useNJDistrictImpact(
 }
 
 function buildAggregateResponse(
-  variant: ReformVariant,
   year: number,
 ): Promise<AggregateImpactResponse> {
   return Promise.all([
-    fetchCSV(`distributional_impact_${variant}.csv`),
-    fetchCSV(`metrics_${variant}.csv`),
-    fetchCSV(`winners_losers_${variant}.csv`),
-    fetchCSV(`income_brackets_${variant}.csv`),
+    fetchCSV(`distributional_impact.csv`),
+    fetchCSV(`metrics.csv`),
+    fetchCSV(`winners_losers.csv`),
+    fetchCSV(`income_brackets.csv`),
   ]).then(([distributional, metrics, winnersLosers, incomeBrackets]) => {
     const dist = distributional.filter((r) => r.year === year);
     const met = metrics.filter((r) => r.year === year);
@@ -152,12 +139,11 @@ function buildAggregateResponse(
 
 export function useAggregateImpact(
   enabled: boolean,
-  variant: ReformVariant = "combined",
   year: number = NJ_DASHBOARD_YEAR,
 ) {
   return useQuery<AggregateImpactResponse>({
-    queryKey: ["aggregateImpact", variant, year],
-    queryFn: () => buildAggregateResponse(variant, year),
+    queryKey: ["aggregateImpact", year],
+    queryFn: () => buildAggregateResponse(year),
     enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

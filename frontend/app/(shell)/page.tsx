@@ -50,12 +50,12 @@ export default function Home() {
       <div className="bg-primary-500 text-white py-8 px-4 shadow-md">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-4xl font-bold mb-2">
-            NJ CTC + EITC Expansion Calculator
+            NJ Child Tax Credit Increase Calculator
           </h1>
           <p className="text-lg opacity-90">
-            See the impact of the New Jersey Cash Alliance proposal to raise the
-            state Child Tax Credit and Earned Income Tax Credit on New Jersey
-            households
+            See the impact of New Jersey&apos;s enacted 25% Child Tax Credit
+            increase (P.L.2026, c.26) on New Jersey households, statewide and
+            by congressional district
           </p>
         </div>
       </div>

@@ -1,9 +1,10 @@
-"""Household situation builder for the NJ CTC + EITC expansion calculator.
+"""Household situation builder for the enacted NJ CTC increase calculator.
 
 This module builds PolicyEngine household situations used by the
-household calculator view. The calculator contrasts current-law 2026
-(baseline) with one of the forward-reform variants (CTC, EITC,
-combined); ``impact = reform - baseline``.
+household calculator view. Current law (post policyengine-us PR #8971)
+already contains the enacted 25% increase, so the calculator contrasts
+the ``prior_law`` counterfactual (baseline) with plain current law
+(reform); ``impact = reform - baseline``.
 """
 
 from typing import Any, Dict, List, Optional
@@ -78,7 +79,10 @@ def build_household_situation(
     }
 
     if include_axes:
-        count = min(4001, max(501, int(axis_max / 500)))
+        # The NJ CTC only varies below the $80k ceiling, so a coarse grid
+        # captures the full shape; 401 points keeps a two-sim sweep under
+        # a minute on Modal.
+        count = min(401, max(101, int(axis_max / 500)))
         situation["axes"] = [
             [
                 {
@@ -124,12 +128,14 @@ def calculate_household_impact(
     year: int,
     max_earnings: float,
     state_code: str = "NJ",
-    variant: str = "combined",
+    variant: str = "prior_law",
 ) -> Dict[str, Any]:
-    """Calculate household impact of the NJ CTC + EITC expansion.
+    """Calculate household impact of the enacted NJ CTC increase.
 
-    Runs current-law and forward-reform simulations and returns
-    ``impact = reform - baseline``.
+    Baseline applies the prior-law counterfactual (pre-increase bracket
+    amounts restored for 2026-2028); reform is plain current law, which
+    includes the enacted increase. Returns ``impact = reform - baseline``
+    (positive = the household gains from the enacted increase).
 
     Args:
         age_head: Age of the primary filer
@@ -139,11 +145,13 @@ def calculate_household_impact(
         year: Tax year
         max_earnings: Maximum earnings for chart x-axis
         state_code: Two-letter state code (default: "NJ")
-        variant: Reform variant — ``"ctc"``, ``"eitc"``, or ``"combined"``.
+        variant: Counterfactual applied to the baseline sim (currently
+            only ``"prior_law"``).
 
     Returns:
         Impact analysis results including income_range, net_income_change,
-        nj_income_tax_change, and income_tax_change (federal).
+        nj_income_tax_change, and income_tax_change (federal), plus
+        point values for both scenarios at ``income``.
     """
     # Import here so the module can be imported without policyengine_us
     try:
@@ -167,14 +175,21 @@ def calculate_household_impact(
         include_axes=True,
     )
 
-    # Baseline = current law. Reform = forward expansion variant.
-    baseline_sim = Simulation(situation=situation)
+    # Baseline = prior law counterfactual. Reform = current law (enacted).
+    baseline_sim = Simulation(
+        situation=situation, reform=create_nj_reform(variant)
+    )
     baseline_net_income = baseline_sim.calculate("household_net_income", year)
     baseline_nj_income_tax = baseline_sim.calculate("nj_income_tax", year)
     baseline_income_tax = baseline_sim.calculate("income_tax", year)
-    income_range = baseline_sim.calculate("employment_income", year)
+    # map_to="household" — the raw person-level array interleaves every
+    # member (dependents contribute $0), which breaks interpolation over
+    # the axis; summing to household level recovers the swept income.
+    income_range = baseline_sim.calculate(
+        "employment_income", year, map_to="household"
+    )
 
-    reform_sim = Simulation(situation=situation, reform=create_nj_reform(variant))
+    reform_sim = Simulation(situation=situation)
     reform_net_income = reform_sim.calculate("household_net_income", year)
     reform_nj_income_tax = reform_sim.calculate("nj_income_tax", year)
     reform_income_tax = reform_sim.calculate("income_tax", year)
@@ -199,9 +214,35 @@ def calculate_household_impact(
         "nj_income_tax_change": nj_income_tax_change.tolist(),
         "income_tax_change": income_tax_change.tolist(),
         "benefit_at_income": {
-            "current_law": baseline_at_income,
+            "baseline": baseline_at_income,
             "reform": reform_at_income,
             "difference": reform_at_income - baseline_at_income,
+            "federal_tax_change": interpolate(
+                income_range, reform_income_tax, income
+            ) - interpolate(income_range, baseline_income_tax, income),
+            "state_tax_change": interpolate(
+                income_range, reform_nj_income_tax, income
+            ) - interpolate(income_range, baseline_nj_income_tax, income),
+        },
+        "point": {
+            "baseline": {
+                "household_net_income": baseline_at_income,
+                "nj_income_tax": interpolate(
+                    income_range, baseline_nj_income_tax, income
+                ),
+                "income_tax": interpolate(
+                    income_range, baseline_income_tax, income
+                ),
+            },
+            "reform": {
+                "household_net_income": reform_at_income,
+                "nj_income_tax": interpolate(
+                    income_range, reform_nj_income_tax, income
+                ),
+                "income_tax": interpolate(
+                    income_range, reform_income_tax, income
+                ),
+            },
         },
         "x_axis_max": max_earnings,
     }

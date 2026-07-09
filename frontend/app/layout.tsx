@@ -12,11 +12,11 @@ const inter = Inter({
   display: 'swap',
 });
 
-const SITE_URL = 'https://policyengine.org/us/nj-ctc-eitc-expansion';
+const SITE_URL = 'https://policyengine.org/us/nj-ctc-increase';
 
-const SITE_TITLE = 'NJ CTC + EITC Expansion Calculator';
+const SITE_TITLE = 'NJ Child Tax Credit Increase Calculator';
 const SITE_DESCRIPTION =
-  'Interactive analysis of the New Jersey Cash Alliance proposal to raise the state Child Tax Credit and Earned Income Tax Credit.';
+  'Interactive analysis of New Jersey\'s enacted 25% Child Tax Credit increase for tax years 2026-2028 (S-4531 / P.L.2026, c.26).';
 
 export const metadata: Metadata = {
   title: SITE_TITLE,

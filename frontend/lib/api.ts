@@ -1,163 +1,50 @@
 /**
- * Household impact via the PolicyEngine API.
+ * Household impact via the Modal household backend
+ * (scripts/modal_household_endpoint.py), which pins the same
+ * policyengine-us as the data pipelines. The backend runs two
+ * simulations per request — prior law (the pre-increase NJ CTC
+ * bracket amounts restored for 2026-2028) and plain current law
+ * (which includes the enacted 25% increase from S-4531 / P.L.2026,
+ * c.26) — and returns the sweep plus point values:
  *
- * Calls https://api.policyengine.org/us/calculate directly — no backend
- * server required.
+ *   impact = current law (enacted increase) - prior law (counterfactual)
  *
- * For the NJ CTC + EITC expansion dashboard, the household calculator
- * sends the combined reform package (CTC bracket amount + age-limit
- * raise + EITC match raise) as the "reform" policy. Impact convention
- * is the standard:
- *
- *   impact = reform (NJ Cash Alliance package) - baseline (current law)
- *
- * which is positive when the household gains net income under the reform.
+ * which is positive when the household gains from the enacted increase.
  */
 
 import {
   HouseholdRequest,
   HouseholdImpactResponse,
 } from "./types";
-import {
-  buildHouseholdSituation,
-  buildReformPolicy,
-  interpolate,
-} from "./household";
-
-const PE_API_URL = "https://api.policyengine.org";
-
-class ApiError extends Error {
-  status: number;
-  response: unknown;
-  constructor(message: string, status: number, response?: unknown) {
-    super(message);
-    this.status = status;
-    this.response = response;
-  }
-}
-
-async function fetchWithTimeout(
-  url: string,
-  options: RequestInit,
-  timeout = 120000,
-): Promise<Response> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    return response;
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-interface PEApiResponse {
-  result: {
-    households: Record<string, Record<string, Record<string, number[]>>>;
-    people: Record<string, Record<string, Record<string, number[]>>>;
-    tax_units: Record<string, Record<string, Record<string, number[]>>>;
-  };
-}
-
-async function peCalculate(body: Record<string, unknown>): Promise<PEApiResponse> {
-  const response = await fetchWithTimeout(
-    `${PE_API_URL}/us/calculate`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  );
-  if (!response.ok) {
-    let errorBody;
-    try {
-      errorBody = await response.json();
-    } catch {
-      errorBody = await response.text();
-    }
-    const errorMessage = typeof errorBody === 'object' && errorBody?.message
-      ? errorBody.message
-      : typeof errorBody === 'string'
-        ? errorBody
-        : JSON.stringify(errorBody);
-    throw new ApiError(
-      `PolicyEngine API error: ${response.status} - ${errorMessage}`,
-      response.status,
-      errorBody,
-    );
-  }
-  return response.json();
-}
+import { runHouseholdSweep } from "./modalApi";
 
 export const api = {
   async calculateHouseholdImpact(
     request: HouseholdRequest,
   ): Promise<HouseholdImpactResponse> {
-    const household = buildHouseholdSituation(request);
-    const policy = buildReformPolicy();
-    const yearStr = String(request.year);
-
-    // Run baseline (current law) and reform (NJ Cash Alliance combined) in parallel.
-    const [baselineResult, reformResult] = await Promise.all([
-      peCalculate({ household }),
-      peCalculate({ household, policy }),
-    ]);
-
-    const baselineNetIncome: number[] =
-      baselineResult.result.households["your household"]["household_net_income"][yearStr];
-    const reformNetIncome: number[] =
-      reformResult.result.households["your household"]["household_net_income"][yearStr];
-    const incomeRange: number[] =
-      baselineResult.result.people["you"]["employment_income"][yearStr];
-
-    const baselineStateTax: number[] =
-      baselineResult.result.tax_units["your tax unit"]["nj_income_tax"][yearStr];
-    const reformStateTax: number[] =
-      reformResult.result.tax_units["your tax unit"]["nj_income_tax"][yearStr];
-
-    const baselineFederalTax: number[] =
-      baselineResult.result.tax_units["your tax unit"]["income_tax"][yearStr];
-    const reformFederalTax: number[] =
-      reformResult.result.tax_units["your tax unit"]["income_tax"][yearStr];
-
-    // Impact = reform - baseline (positive => household gains under the NJ
-    // Cash Alliance proposal vs. current law).
-    const netIncomeChange = reformNetIncome.map(
-      (val, i) => val - baselineNetIncome[i],
-    );
-    const federalTaxChange = reformFederalTax.map(
-      (val, i) => val - baselineFederalTax[i],
-    );
-    const stateTaxChange = reformStateTax.map(
-      (val, i) => val - baselineStateTax[i],
-    );
-
-    const baselineAtIncome = interpolate(incomeRange, baselineNetIncome, request.income);
-    const reformAtIncome = interpolate(incomeRange, reformNetIncome, request.income);
-    const baselineFederalTaxAtIncome = interpolate(incomeRange, baselineFederalTax, request.income);
-    const reformFederalTaxAtIncome = interpolate(incomeRange, reformFederalTax, request.income);
-    const baselineStateTaxAtIncome = interpolate(incomeRange, baselineStateTax, request.income);
-    const reformStateTaxAtIncome = interpolate(incomeRange, reformStateTax, request.income);
-
-    const federalTaxChangeAtIncome =
-      reformFederalTaxAtIncome - baselineFederalTaxAtIncome;
-    const stateTaxChangeAtIncome =
-      reformStateTaxAtIncome - baselineStateTaxAtIncome;
-    const netIncomeChangeAtIncome = reformAtIncome - baselineAtIncome;
+    const result = await runHouseholdSweep({
+      age_head: request.age_head,
+      age_spouse: request.age_spouse,
+      dependent_ages: request.dependent_ages,
+      income: request.income,
+      year: request.year,
+      max_earnings: request.max_earnings,
+      state_code: request.state_code || "NJ",
+    });
 
     return {
-      income_range: incomeRange,
-      net_income_change: netIncomeChange,
-      federalTaxChange,
-      stateTaxChange,
-      netIncomeChange,
+      income_range: result.income_range,
+      net_income_change: result.net_income_change,
+      federalTaxChange: result.income_tax_change,
+      stateTaxChange: result.nj_income_tax_change,
+      netIncomeChange: result.net_income_change,
       benefit_at_income: {
-        baseline: baselineAtIncome,
-        reform: reformAtIncome,
-        difference: netIncomeChangeAtIncome,
-        federal_tax_change: federalTaxChangeAtIncome,
-        state_tax_change: stateTaxChangeAtIncome,
-        net_income_change: netIncomeChangeAtIncome,
+        baseline: result.benefit_at_income.baseline,
+        reform: result.benefit_at_income.reform,
+        difference: result.benefit_at_income.difference,
+        federal_tax_change: result.benefit_at_income.federal_tax_change,
+        state_tax_change: result.benefit_at_income.state_tax_change,
+        net_income_change: result.benefit_at_income.difference,
       },
       x_axis_max: request.max_earnings,
     };

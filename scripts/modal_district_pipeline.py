@@ -1,14 +1,26 @@
-"""Modal-based congressional-district pipeline for the NJ Cash Alliance
-CTC + EITC expansion dashboard.
+"""Modal-based congressional-district pipeline for the enacted NJ CTC
+increase dashboard (S-4531 / P.L.2026, c.26).
 
 Calculates per-district impacts for New Jersey's 12 congressional
-districts (NJ-01..NJ-12; state FIPS 34) for one or more reform variants
-and writes one CSV per variant to ``frontend/public/data/``.
+districts (NJ-01..NJ-12; state FIPS 34) and writes
+``congressional_districts.csv`` to ``frontend/public/data/``.
+
+Comparison direction (policyengine-us post PR #8971 already contains
+the enacted 25% bracket increase for 2026-2028):
+
+- baseline sim: current law + ``reform_prior_law.json`` (pre-increase
+  bracket amounts restored for 2026-2028), and
+- reform sim: plain current law (the enacted increase).
+
+Dataset note: the district runs stay on the legacy per-district
+calibrated files (``policyengine-us-data/districts/NJ-XX.h5``,
+~9k households each) rather than the Populace slices the statewide
+pipeline uses, because Populace carries only ~130 raw households per
+NJ district — too few for stable district-level estimates. District
+figures therefore do not exactly aggregate to the statewide figures.
 
 Usage:
-    modal run scripts/modal_district_pipeline.py                        # all 3 variants
-    modal run scripts/modal_district_pipeline.py --variant ctc          # one
-    modal run scripts/modal_district_pipeline.py --variants eitc,combined
+    modal run scripts/modal_district_pipeline.py
 """
 
 import json
@@ -18,22 +30,25 @@ from pathlib import Path
 import modal
 
 
-app = modal.App("nj-ctc-eitc-expansion-district-pipeline")
+app = modal.App("nj-ctc-enacted-district-pipeline")
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Matches scripts/modal_pipeline.py (first release containing PR #8971).
+POLICYENGINE_US_PIN = "policyengine-us==1.768.2"
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("git")
     .pip_install(
-        "policyengine-us>=1.665.0",
+        POLICYENGINE_US_PIN,
         "numpy>=1.24.0",
         "pandas>=2.0.0",
         "huggingface_hub",
     )
-    .add_local_file(_REPO_ROOT / "reform_ctc.json", "/reforms/reform_ctc.json")
-    .add_local_file(_REPO_ROOT / "reform_eitc.json", "/reforms/reform_eitc.json")
-    .add_local_file(_REPO_ROOT / "reform_combined.json", "/reforms/reform_combined.json")
+    .add_local_file(
+        _REPO_ROOT / "reform_prior_law.json", "/reforms/reform_prior_law.json"
+    )
 )
 
 YEAR = 2026
@@ -41,16 +56,14 @@ NJ_STATE = "NJ"
 NJ_STATE_FIPS = 34
 NJ_DISTRICTS = list(range(1, 13))  # NJ has 12 congressional districts.
 
-VARIANTS = ("ctc", "eitc", "combined")
 
-
-def _load_reform(variant: str) -> dict:
-    """Load a reform JSON; tries the in-image /reforms/ path first."""
-    in_image = Path(f"/reforms/reform_{variant}.json")
+def _load_prior_law() -> dict:
+    """Load the prior-law counterfactual; tries the in-image path first."""
+    in_image = Path("/reforms/reform_prior_law.json")
     if in_image.exists():
         path = in_image
     else:
-        path = Path(__file__).resolve().parent.parent / f"reform_{variant}.json"
+        path = Path(__file__).resolve().parent.parent / "reform_prior_law.json"
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     data.pop("_comment", None)
@@ -102,19 +115,31 @@ def get_nj_districts() -> list[str]:
     timeout=1800,
     retries=2,
 )
-def calculate_district(district_id: str, variant: str) -> dict:
-    """Run a single (district, variant) sim and return its impact row."""
+def calculate_district(district_id: str) -> dict:
+    """Run a single district sim (prior law vs enacted law) and return
+    its impact row."""
     import numpy as np
     from policyengine_us import Microsimulation
-    from policyengine_core.reforms import Reform
 
-    print(f"Calculating {district_id} variant={variant}...")
+    print(f"Calculating {district_id}...")
     dataset_url = f"hf://policyengine/policyengine-us-data/districts/{district_id}.h5"
-    reform = _build_reform_from_overrides(_load_reform(variant))
+    prior_law = _build_reform_from_overrides(_load_prior_law())
 
     try:
-        sim_baseline = Microsimulation(dataset=dataset_url)
-        sim_reform = Microsimulation(dataset=dataset_url, reform=reform)
+        sim_baseline = Microsimulation(dataset=dataset_url, reform=prior_law)
+        sim_reform = Microsimulation(dataset=dataset_url)
+
+        # Sanity: the enacted increase must be present in the pinned
+        # policyengine-us release, or every impact is silently zero.
+        ctc_baseline = float(sim_baseline.calculate("nj_ctc", period=YEAR).sum())
+        ctc_reform = float(sim_reform.calculate("nj_ctc", period=YEAR).sum())
+        if ctc_reform <= ctc_baseline:
+            raise RuntimeError(
+                f"Enacted NJ CTC increase not present in {district_id}: "
+                f"prior law ${ctc_baseline:,.0f} vs current law "
+                f"${ctc_reform:,.0f}. Is the pinned policyengine-us "
+                "release missing PR #8971?"
+            )
 
         household_weight = np.array(
             sim_baseline.calculate("household_weight", period=YEAR)
@@ -195,20 +220,19 @@ def calculate_district(district_id: str, variant: str) -> dict:
             "child_poverty_pct_change": round(float(child_poverty_pct_change), 2),
             "state": NJ_STATE,
             "year": YEAR,
-            "variant": variant,
         }
         print(
-            f"  {district_id} {variant}: avg=${avg_change:.2f}  "
+            f"  {district_id}: avg=${avg_change:.2f}  "
             f"winners={winners_share:.1%}  poverty={poverty_pct_change:+.1f}%"
         )
         return result
     except Exception as e:
-        print(f"  ERROR {district_id} {variant}: {e}")
+        print(f"  ERROR {district_id}: {e}")
         return None
 
 
 @app.local_entrypoint()
-def main(variant: str = "", variants: str = ""):
+def main():
     import pandas as pd
 
     output_dir = os.path.join(
@@ -219,35 +243,17 @@ def main(variant: str = "", variants: str = ""):
     )
     os.makedirs(output_dir, exist_ok=True)
 
-    if variants:
-        target = [v.strip() for v in variants.split(",") if v.strip()]
-    elif variant:
-        target = [variant]
-    else:
-        target = list(VARIANTS)
-
-    bad = [v for v in target if v not in VARIANTS]
-    if bad:
-        raise ValueError(f"Unknown variant(s): {bad}. Choose from {VARIANTS}.")
-
     districts = get_nj_districts()
-    print(f"Running NJ districts {districts} variants={target} on Modal (year {YEAR})...")
+    print(f"Running NJ districts {districts} on Modal (year {YEAR})...")
 
-    pairs = [(d, v) for v in target for d in districts]
-    results = list(calculate_district.starmap(pairs))
+    results = list(calculate_district.map(districts))
     rows = [r for r in results if r is not None]
     failed = len(results) - len(rows)
     if failed:
-        print(f"WARNING: {failed} (district, variant) combinations failed")
-
-    if not rows:
-        print("ERROR: no rows produced")
-        return
+        raise SystemExit(f"ERROR: {failed} district(s) failed; not writing CSV")
 
     df = pd.DataFrame(rows)
-    for v in target:
-        sub = df[df["variant"] == v].drop(columns=["variant"])
-        sub = sub.sort_values(["state", "district"]).reset_index(drop=True)
-        path = os.path.join(output_dir, f"congressional_districts_{v}.csv")
-        sub.to_csv(path, index=False)
-        print(f"Saved: {path}")
+    df = df.sort_values(["state", "district"]).reset_index(drop=True)
+    path = os.path.join(output_dir, "congressional_districts.csv")
+    df.to_csv(path, index=False)
+    print(f"Saved: {path}")

@@ -1,0 +1,18 @@
+{
+  "_comment": "Prior-law counterfactual for the enacted NJ CTC increase (S-4531 / P.L.2026, c.26). Current law in policyengine-us (post PR #8971) raises every bracket amount 25% for tax years 2026-2028: $1,250 / $1,000 / $750 / $500 / $250, reverting in 2029. This payload restores the prior amounts ($1,000 / $800 / $600 / $400 / $200) over exactly that window, so baseline-with-this-reform vs. plain current law isolates the enacted change. 2029+ needs no override because current law reverts on its own.",
+  "gov.states.nj.tax.income.credits.ctc.amount.brackets[0].amount": {
+    "2026-01-01.2028-12-31": 1000
+  },
+  "gov.states.nj.tax.income.credits.ctc.amount.brackets[1].amount": {
+    "2026-01-01.2028-12-31": 800
+  },
+  "gov.states.nj.tax.income.credits.ctc.amount.brackets[2].amount": {
+    "2026-01-01.2028-12-31": 600
+  },
+  "gov.states.nj.tax.income.credits.ctc.amount.brackets[3].amount": {
+    "2026-01-01.2028-12-31": 400
+  },
+  "gov.states.nj.tax.income.credits.ctc.amount.brackets[4].amount": {
+    "2026-01-01.2028-12-31": 200
+  }
+}

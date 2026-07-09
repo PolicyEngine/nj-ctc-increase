@@ -1,10 +1,11 @@
-"""New Jersey CTC + EITC expansion calculation module.
+"""Enacted New Jersey CTC increase calculation module.
 
 Provides utilities for calculating household and aggregate impacts of
-the NJ Cash Alliance proposal — a CTC bracket expansion combined with
-raising the state EITC match to 50% of the federal credit. Three
-forward-reform variants are supported: ``ctc`` (CTC only), ``eitc``
-(EITC only), and ``combined`` (both).
+the enacted 25% NJ Child Tax Credit increase for tax years 2026-2028
+(S-4531 / P.L.2026, c.26). Because current law in policyengine-us
+already includes the increase, impacts are computed against the
+``prior_law`` counterfactual (pre-increase bracket amounts restored
+for 2026-2028).
 """
 
 from .household import build_household_situation, calculate_household_impact
