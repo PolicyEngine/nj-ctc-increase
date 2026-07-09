@@ -34,9 +34,8 @@ app = modal.App("nj-ctc-enacted-district-pipeline")
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# TODO: pin to the first policyengine-us release that contains PR #8971,
-# matching scripts/modal_pipeline.py.
-POLICYENGINE_US_PIN = "policyengine-us>=1.765.0"
+# Matches scripts/modal_pipeline.py (first release containing PR #8971).
+POLICYENGINE_US_PIN = "policyengine-us==1.768.2"
 
 image = (
     modal.Image.debian_slim(python_version="3.11")

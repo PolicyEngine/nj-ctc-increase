@@ -30,10 +30,10 @@ app = modal.App("nj-ctc-enacted-pipeline")
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# TODO: pin to the first policyengine-us release that contains PR #8971
-# (the enacted NJ CTC increase). Until then the reform sim's "current
-# law" would not include the increase and every impact would be zero.
-POLICYENGINE_US_PIN = "policyengine-us>=1.765.0"
+# 1.768.2 is the first policyengine-us release that contains PR #8971
+# (the enacted NJ CTC increase). An older release's "current law" would
+# not include the increase and every impact would be zero.
+POLICYENGINE_US_PIN = "policyengine-us==1.768.2"
 
 image = (
     modal.Image.debian_slim(python_version="3.11")

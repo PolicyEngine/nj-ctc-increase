@@ -34,14 +34,18 @@ to statewide figures.
 
 ## Refreshing data
 
-1. Wait for a policyengine-us release containing PR #8971, then pin it
-   in `pyproject.toml` and the two Modal pipeline images
-   (`POLICYENGINE_US_PIN`).
-2. `modal run scripts/build_populace_nj_slice.py`
-3. `modal run scripts/modal_pipeline.py`
-4. `modal run scripts/modal_district_pipeline.py`
-5. Once api.policyengine.org deploys that release:
+policyengine-us is pinned to 1.768.2 (the first release containing
+PR #8971) in `pyproject.toml` and the Modal images
+(`POLICYENGINE_US_PIN`). To refresh after a pin or Populace revision
+bump:
+
+1. `modal run scripts/build_populace_nj_slice.py`
+2. `modal run scripts/modal_pipeline.py`
+3. `modal run scripts/modal_district_pipeline.py`
+4. Once api.policyengine.org deploys a release ≥ 1.768.2:
    `uv run --with requests scripts/compute_example_households.py`
+   (the example-households section stays hidden until this JSON
+   exists; before the API updates, it would compute all-zero impacts)
 
 Both pipelines fail loudly if the pinned release does not contain the
 enacted increase (baseline CTC totals would equal current-law totals).
