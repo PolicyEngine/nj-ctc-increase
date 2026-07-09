@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "nj-ctc-eitc-expansion-frontend",
+      "name": "nj-ctc-increase-frontend",
       "dependencies": {
         "@policyengine/ui-kit": "^0.9.0",
         "@tanstack/react-query": "^5.17.9",

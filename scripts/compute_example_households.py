@@ -3,27 +3,31 @@ household tab can show example impacts without hitting the PE API on
 page load.
 
 Hits https://api.policyengine.org/us/calculate twice per profile —
-once with no policy override (current NJ law), once with the NJ Cash
-Alliance combined CTC + EITC expansion applied (reform) — and writes
-the diff into ``frontend/public/data/example_households.json``.
+once with the prior-law counterfactual applied (baseline: pre-increase
+NJ CTC amounts restored for 2026-2028), once with no policy override
+(current law, which includes the enacted 25% increase from S-4531 /
+P.L.2026, c.26) — and writes the diff into
+``frontend/public/data/example_households.json``.
 
 Sign convention:
 
-    impact = reform (NJ Cash Alliance package) - baseline (current NJ law)
+    impact = current law (enacted increase) - prior law (counterfactual)
 
-so positive numbers mean the household gains under the proposal.
+so positive numbers mean the household gains from the enacted increase.
 
-The example profiles all have qualifying children, since the NJ CTC
-and EITC expansions only matter for families with kids:
+The example profiles all have children age 5 or younger, since only
+under-6 children qualify for the NJ CTC (eligibility is unchanged):
 
-  - Single parent, $30k, 1 child age 4: in the EITC peak and the
-    top NJ CTC bracket ($1,000 → $1,500). Big proportional gain.
-  - Married couple, $50k, 2 kids ages 7 and 10: kids currently age out
-    of the NJ CTC (under 6 only); the reform expands eligibility to
-    under 12 so both kids become eligible at $750 each in this bracket.
-  - Married couple, $80k, 2 kids ages 4 and 8: the older kid is newly
-    eligible under the age expansion, and the household sits at the top
-    of the NJ CTC income range ($60-80k bracket).
+  - Single parent, $25k, 1 child age 4: top NJ CTC bracket
+    ($1,000 → $1,250 per child).
+  - Married couple, $45k, 2 kids ages 2 and 5: middle bracket
+    ($600 → $750 per child, +$300 total).
+  - Married couple, $75k, 1 child age 3: top of the NJ CTC income
+    range ($200 → $250).
+
+NOTE: run this only after api.policyengine.org deploys a
+policyengine-us release containing PR #8971; before that, current law
+on the API equals prior law and every impact comes back zero.
 
 Usage:
     uv run --with requests scripts/compute_example_households.py
@@ -41,41 +45,39 @@ OUTPUT_PATH = REPO_ROOT / "frontend" / "public" / "data" / "example_households.j
 
 PROFILES = [
     {
-        "label": "Single parent, $30k, 1 young child",
-        "income": 30_000,
+        "label": "Single parent, $25k, 1 young child",
+        "income": 25_000,
         "age_head": 30,
         "married": False,
         "dependents": [4],
     },
     {
-        "label": "Married couple, $50k, 2 school-age kids",
-        "income": 50_000,
+        "label": "Married couple, $45k, 2 young kids",
+        "income": 45_000,
         "age_head": 36,
         "married": True,
-        "dependents": [7, 10],
+        "dependents": [2, 5],
     },
     {
-        "label": "Married couple, $80k, 2 kids",
-        "income": 80_000,
+        "label": "Married couple, $75k, 1 young child",
+        "income": 75_000,
         "age_head": 42,
         "married": True,
-        "dependents": [4, 8],
+        "dependents": [3],
     },
 ]
 
 
-def reform_policy() -> dict:
-    """NJ Cash Alliance combined CTC + EITC expansion. Mirrors the
-    REFORM_POLICY in frontend/lib/household.ts."""
-    period = "2026-01-01.2100-12-31"
+def prior_law_policy() -> dict:
+    """Prior-law counterfactual (pre-increase NJ CTC amounts for
+    2026-2028). Mirrors PRIOR_LAW_POLICY in frontend/lib/household.ts."""
+    period = "2026-01-01.2028-12-31"
     return {
-        "gov.states.nj.tax.income.credits.ctc.amount[0].amount": {period: 1500},
-        "gov.states.nj.tax.income.credits.ctc.amount[1].amount": {period: 1000},
-        "gov.states.nj.tax.income.credits.ctc.amount[2].amount": {period: 750},
-        "gov.states.nj.tax.income.credits.ctc.amount[3].amount": {period: 500},
-        "gov.states.nj.tax.income.credits.ctc.amount[4].amount": {period: 250},
-        "gov.states.nj.tax.income.credits.ctc.age_limit": {period: 12},
-        "gov.states.nj.tax.income.credits.eitc.match": {period: 0.5},
+        "gov.states.nj.tax.income.credits.ctc.amount[0].amount": {period: 1000},
+        "gov.states.nj.tax.income.credits.ctc.amount[1].amount": {period: 800},
+        "gov.states.nj.tax.income.credits.ctc.amount[2].amount": {period: 600},
+        "gov.states.nj.tax.income.credits.ctc.amount[3].amount": {period: 400},
+        "gov.states.nj.tax.income.credits.ctc.amount[4].amount": {period: 200},
     }
 
 
@@ -176,20 +178,20 @@ def extract(result: dict) -> dict:
 
 
 def compute_profile(profile: dict) -> dict:
-    """Run baseline (current NJ law) + reform (NJ Cash Alliance) at the
-    user's income point and as an income sweep, so the page can render
-    the full net-income chart instantly."""
+    """Run baseline (prior law) + reform (current law, the enacted
+    increase) at the user's income point and as an income sweep, so the
+    page can render the full net-income chart instantly."""
     yr = str(YEAR)
 
     # Point estimate.
     point_situation = build_household(profile, with_axes=False)
-    baseline_pt = extract(calc(point_situation, None))
-    reform_pt = extract(calc(point_situation, reform_policy()))
+    baseline_pt = extract(calc(point_situation, prior_law_policy()))
+    reform_pt = extract(calc(point_situation, None))
 
     # Income sweep for the chart.
     sweep_situation = build_household(profile, with_axes=True)
-    base_sweep = calc(sweep_situation, None)
-    ref_sweep = calc(sweep_situation, reform_policy())
+    base_sweep = calc(sweep_situation, prior_law_policy())
+    ref_sweep = calc(sweep_situation, None)
 
     income_range = base_sweep["people"]["you"]["employment_income"][yr]
     base_net = base_sweep["households"]["your household"]["household_net_income"][yr]

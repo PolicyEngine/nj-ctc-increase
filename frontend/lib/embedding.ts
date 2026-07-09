@@ -157,7 +157,7 @@ export function sendMessageToParent(type: string, data: Record<string, unknown> 
  * Notify parent that the dashboard is ready
  */
 export function notifyReady(): void {
-  sendMessageToParent('ready', { source: 'nj-ctc-eitc-expansion' });
+  sendMessageToParent('ready', { source: 'nj-ctc-increase' });
 }
 
 /**

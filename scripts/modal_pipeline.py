@@ -1,14 +1,22 @@
-"""Modal-based state-level data generation pipeline for the NJ Cash
-Alliance CTC + EITC expansion dashboard.
+"""Modal-based state-level data generation pipeline for the enacted
+NJ CTC increase dashboard (S-4531 / P.L.2026, c.26).
 
-Runs three reform variants (CTC only, EITC only, combined) against the
-New Jersey state-level microsimulation dataset on HuggingFace and writes
-per-variant CSVs to ``frontend/public/data/``.
+Current law in policyengine-us (post PR #8971) already contains the
+enacted 25% bracket increase for 2026-2028, so the comparison runs
+backwards from the usual pattern:
+
+- baseline sim: current law + ``reform_prior_law.json`` (bracket
+  amounts restored to their pre-increase values for 2026-2028), and
+- reform sim: plain current law (the enacted increase).
+
+Runs against the NJ slice of the pinned Populace national dataset,
+built onto the ``nj-ctc-populace-slices`` Volume by
+``scripts/build_populace_nj_slice.py``, and writes CSVs to
+``frontend/public/data/``.
 
 Usage:
-    modal run scripts/modal_pipeline.py                         # all 3 variants, 2026
-    modal run scripts/modal_pipeline.py --variant ctc           # one variant
-    modal run scripts/modal_pipeline.py --variants ctc,eitc     # explicit subset
+    modal run scripts/build_populace_nj_slice.py   # once per revision bump
+    modal run scripts/modal_pipeline.py
 """
 
 import json
@@ -18,50 +26,48 @@ from pathlib import Path
 import modal
 
 
-app = modal.App("nj-ctc-eitc-expansion-pipeline")
+app = modal.App("nj-ctc-enacted-pipeline")
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# TODO: pin to the first policyengine-us release that contains PR #8971
+# (the enacted NJ CTC increase). Until then the reform sim's "current
+# law" would not include the increase and every impact would be zero.
+POLICYENGINE_US_PIN = "policyengine-us>=1.765.0"
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("git")
     .pip_install(
-        "policyengine-us>=1.665.0",
+        POLICYENGINE_US_PIN,
         "numpy>=1.24.0",
         "pandas>=2.0.0",
         "huggingface_hub",
     )
-    # Ship the canonical reform JSONs into the worker image so the worker
-    # can load them at runtime (Modal otherwise only sees the script dir).
-    .add_local_file(_REPO_ROOT / "reform_ctc.json", "/reforms/reform_ctc.json")
-    .add_local_file(_REPO_ROOT / "reform_eitc.json", "/reforms/reform_eitc.json")
-    .add_local_file(_REPO_ROOT / "reform_combined.json", "/reforms/reform_combined.json")
+    # Ship the counterfactual JSON into the worker image so the worker
+    # can load it at runtime (Modal otherwise only sees the script dir).
+    .add_local_file(
+        _REPO_ROOT / "reform_prior_law.json", "/reforms/reform_prior_law.json"
+    )
 )
 
 YEAR = 2026
-NJ_DATASET = "hf://policyengine/policyengine-us-data/states/NJ.h5"
 
-VARIANTS = ("ctc", "eitc", "combined")
-VARIANT_LABELS = {
-    "ctc": "CTC expansion only",
-    "eitc": "EITC expansion only",
-    "combined": "Combined CTC + EITC",
-}
+# Same pins as scripts/build_populace_nj_slice.py.
+POPULACE_REVISION = "053baf6cf56aaf1160e2f1bfe7631c6924d46b2e"  # 2026-07-01
+NJ_SLICE_PATH = f"/slices/{POPULACE_REVISION[:8]}/NJ.h5"
+
+volume = modal.Volume.from_name("nj-ctc-populace-slices", create_if_missing=True)
 
 
-# Reform dicts loaded from the repo root (read at import time so they
-# travel with the app definition).
-def _load_reform(variant: str) -> dict:
-    """Load a reform from the JSON files added to the image at /reforms/.
-
-    Falls back to the local repo path so this also works when the script
-    is invoked directly outside Modal (e.g., from a notebook).
-    """
-    in_image = Path(f"/reforms/reform_{variant}.json")
+def _load_prior_law() -> dict:
+    """Load the prior-law counterfactual from the image (or repo root,
+    so this also works when invoked directly outside Modal)."""
+    in_image = Path("/reforms/reform_prior_law.json")
     if in_image.exists():
         path = in_image
     else:
-        path = Path(__file__).resolve().parent.parent / f"reform_{variant}.json"
+        path = _REPO_ROOT / "reform_prior_law.json"
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     data.pop("_comment", None)
@@ -73,8 +79,7 @@ def _build_reform_from_overrides(overrides: dict):
 
     PolicyEngine's stock ``Reform.from_dict`` cannot navigate parameter
     paths with array-index segments, so we walk the parameter tree
-    manually for any ``name[N]`` segment. Same idea as the helper in the
-    south-carolina-2026-tax-changes dashboard.
+    manually for any ``name[N]`` segment.
     """
     import re
     from policyengine_core.reforms import Reform
@@ -114,15 +119,16 @@ def _build_reform_from_overrides(overrides: dict):
     memory=16384,
     timeout=1800,
     retries=1,
+    volumes={"/slices": volume},
 )
-def calculate_variant(variant: str) -> dict:
-    """Run the NJ state-level microsim for a single reform variant and
+def calculate_impacts() -> dict:
+    """Run the NJ state-level microsim (prior law vs enacted law) and
     return distributional / fiscal / poverty / bracket breakdowns."""
     import numpy as np
     from policyengine_us import Microsimulation
-    from policyengine_core.reforms import Reform
+    from policyengine_us.data import USSingleYearDataset
 
-    print(f"Starting NJ {variant} calculation for {YEAR}...")
+    print(f"Starting NJ enacted-CTC calculation for {YEAR}...")
 
     intra_bounds = [-np.inf, -0.05, -1e-3, 1e-3, 0.05, np.inf]
     intra_labels = [
@@ -133,12 +139,31 @@ def calculate_variant(variant: str) -> dict:
         "Gain more than 5%",
     ]
 
-    reform = _build_reform_from_overrides(_load_reform(variant))
+    prior_law = _build_reform_from_overrides(_load_prior_law())
 
-    print("  Loading baseline (current law) sim on NJ dataset...")
-    sim_baseline = Microsimulation(dataset=NJ_DATASET)
-    print(f"  Loading reform ({variant}) sim on NJ dataset...")
-    sim_reform = Microsimulation(dataset=NJ_DATASET, reform=reform)
+    def _dataset():
+        return USSingleYearDataset(file_path=NJ_SLICE_PATH)
+
+    print("  Loading baseline (prior law) sim on NJ Populace slice...")
+    sim_baseline = Microsimulation(dataset=_dataset(), reform=prior_law)
+    print("  Loading reform (enacted current law) sim on NJ Populace slice...")
+    sim_reform = Microsimulation(dataset=_dataset())
+
+    # Sanity: the enacted increase must actually be present in the
+    # pinned policyengine-us release, or every impact is silently zero.
+    ctc_baseline = float(sim_baseline.calculate("nj_ctc", period=YEAR).sum())
+    ctc_reform = float(sim_reform.calculate("nj_ctc", period=YEAR).sum())
+    if ctc_reform <= ctc_baseline:
+        raise RuntimeError(
+            f"Enacted NJ CTC increase not present: baseline nj_ctc "
+            f"${ctc_baseline:,.0f} vs current law ${ctc_reform:,.0f}. "
+            "Is the pinned policyengine-us release missing PR #8971?"
+        )
+    print(
+        f"  nj_ctc outlay: prior law ${ctc_baseline/1e6:.1f}M -> "
+        f"enacted ${ctc_reform/1e6:.1f}M "
+        f"(ratio {ctc_reform/ctc_baseline:.4f}, expected 1.25)"
+    )
 
     # ===== FISCAL IMPACT =====
     nj_baseline = sim_baseline.calculate("nj_income_tax", period=YEAR, map_to="household")
@@ -328,9 +353,8 @@ def calculate_variant(variant: str) -> dict:
             "avg_benefit": bracket_avg,
         })
 
-    print(f"  Variant {variant} done.")
+    print("  Done.")
     return {
-        "variant": variant,
         "year": YEAR,
         "budget": {
             "budgetary_impact": budgetary_impact,
@@ -368,11 +392,10 @@ def calculate_variant(variant: str) -> dict:
     }
 
 
-def _save_variant_csvs(result: dict, output_dir: str) -> None:
-    """Write per-variant CSVs for one variant's result."""
+def _save_csvs(result: dict, output_dir: str) -> None:
+    """Write the dashboard CSVs for the single enacted-reform result."""
     import pandas as pd
 
-    variant = result["variant"]
     year = result["year"]
 
     # Distributional impact (decile)
@@ -453,21 +476,21 @@ def _save_variant_csvs(result: dict, output_dir: str) -> None:
             "avg_benefit": b["avg_benefit"],
         })
 
-    suffixed = {
-        f"distributional_impact_{variant}.csv": distributional_rows,
-        f"metrics_{variant}.csv": metrics_rows,
-        f"winners_losers_{variant}.csv": winners_losers_rows,
-        f"income_brackets_{variant}.csv": income_bracket_rows,
+    outputs = {
+        "distributional_impact.csv": distributional_rows,
+        "metrics.csv": metrics_rows,
+        "winners_losers.csv": winners_losers_rows,
+        "income_brackets.csv": income_bracket_rows,
     }
-    for filename, rows in suffixed.items():
+    for filename, rows in outputs.items():
         path = os.path.join(output_dir, filename)
         pd.DataFrame(rows).to_csv(path, index=False)
         print(f"Saved: {path}")
 
 
 @app.local_entrypoint()
-def main(variant: str = "", variants: str = ""):
-    """Run NJ state-level microsim on Modal for one or more reform variants."""
+def main():
+    """Run the NJ state-level microsim on Modal for the enacted reform."""
     output_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "frontend",
@@ -476,23 +499,11 @@ def main(variant: str = "", variants: str = ""):
     )
     os.makedirs(output_dir, exist_ok=True)
 
-    if variants:
-        target = [v.strip() for v in variants.split(",") if v.strip()]
-    elif variant:
-        target = [variant]
-    else:
-        target = list(VARIANTS)
-
-    bad = [v for v in target if v not in VARIANTS]
-    if bad:
-        raise ValueError(f"Unknown variant(s): {bad}. Choose from {VARIANTS}.")
-
-    print(f"Running NJ {target} on Modal (year {YEAR})...")
-    print(f"Dataset: {NJ_DATASET}")
+    print(f"Running NJ enacted-CTC pipeline on Modal (year {YEAR})...")
+    print(f"Dataset: Populace NJ slice {NJ_SLICE_PATH}")
     print(f"Output: {output_dir}")
 
-    results = list(calculate_variant.map(target))
-    for result in results:
-        _save_variant_csvs(result, output_dir)
+    result = calculate_impacts.remote()
+    _save_csvs(result, output_dir)
 
     print("\nDone.")

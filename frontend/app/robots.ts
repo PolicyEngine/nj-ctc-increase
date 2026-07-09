@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://policyengine.org/us/nj-ctc-eitc-expansion/sitemap.xml',
+    sitemap: 'https://policyengine.org/us/nj-ctc-increase/sitemap.xml',
   };
 }

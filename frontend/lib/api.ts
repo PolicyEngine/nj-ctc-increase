@@ -4,14 +4,14 @@
  * Calls https://api.policyengine.org/us/calculate directly — no backend
  * server required.
  *
- * For the NJ CTC + EITC expansion dashboard, the household calculator
- * sends the combined reform package (CTC bracket amount + age-limit
- * raise + EITC match raise) as the "reform" policy. Impact convention
- * is the standard:
+ * For the enacted NJ CTC increase dashboard, current law on the PE API
+ * already includes the enacted 25% bracket increase (S-4531 / P.L.2026,
+ * c.26), so the calculator sends the prior-law counterfactual as the
+ * "baseline" policy and plain current law plays the reform role:
  *
- *   impact = reform (NJ Cash Alliance package) - baseline (current law)
+ *   impact = current law (enacted increase) - prior law (counterfactual)
  *
- * which is positive when the household gains net income under the reform.
+ * which is positive when the household gains from the enacted increase.
  */
 
 import {
@@ -20,7 +20,7 @@ import {
 } from "./types";
 import {
   buildHouseholdSituation,
-  buildReformPolicy,
+  buildPriorLawPolicy,
   interpolate,
 } from "./household";
 
@@ -94,13 +94,14 @@ export const api = {
     request: HouseholdRequest,
   ): Promise<HouseholdImpactResponse> {
     const household = buildHouseholdSituation(request);
-    const policy = buildReformPolicy();
+    const priorLawPolicy = buildPriorLawPolicy();
     const yearStr = String(request.year);
 
-    // Run baseline (current law) and reform (NJ Cash Alliance combined) in parallel.
+    // Run baseline (prior law counterfactual) and reform (current law,
+    // which includes the enacted increase) in parallel.
     const [baselineResult, reformResult] = await Promise.all([
+      peCalculate({ household, policy: priorLawPolicy }),
       peCalculate({ household }),
-      peCalculate({ household, policy }),
     ]);
 
     const baselineNetIncome: number[] =
@@ -120,8 +121,8 @@ export const api = {
     const reformFederalTax: number[] =
       reformResult.result.tax_units["your tax unit"]["income_tax"][yearStr];
 
-    // Impact = reform - baseline (positive => household gains under the NJ
-    // Cash Alliance proposal vs. current law).
+    // Impact = reform - baseline (positive => household gains from the
+    // enacted increase vs. prior law).
     const netIncomeChange = reformNetIncome.map(
       (val, i) => val - baselineNetIncome[i],
     );

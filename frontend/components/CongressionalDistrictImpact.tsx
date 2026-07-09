@@ -3,11 +3,6 @@
 import { useState, useEffect } from 'react';
 import NJDistrictMap, { NJDistrictData } from './DynamicDistrictMap';
 import ChartWatermark from './ChartWatermark';
-import {
-  REFORM_VARIANTS,
-  REFORM_VARIANT_LABELS,
-  type ReformVariant,
-} from '@/hooks/useAggregateImpact';
 
 interface Props {
   year?: number;
@@ -40,17 +35,16 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
-  const [variant, setVariant] = useState<ReformVariant>('combined');
 
   useEffect(() => {
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH !== undefined
       ? process.env.NEXT_PUBLIC_BASE_PATH
-      : '/us/nj-ctc-eitc-expansion';
+      : '/us/nj-ctc-increase';
 
     setLoading(true);
     setError(null);
 
-    fetch(`${basePath}/data/congressional_districts_${variant}.csv`)
+    fetch(`${basePath}/data/congressional_districts.csv`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load district data');
         return res.text();
@@ -91,7 +85,7 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
         setError(err.message);
         setLoading(false);
       });
-  }, [year, variant]);
+  }, [year]);
 
   if (loading) {
     return (
@@ -132,28 +126,9 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
         </h3>
         <p className="text-gray-600">
           Average household impact by congressional district under the{' '}
-          <strong>{REFORM_VARIANT_LABELS[variant]}</strong> reform.
+          <strong>enacted 25% CTC increase</strong> vs. prior law.
           Hover over a district for details and click to pin.
         </p>
-      </div>
-
-      {/* Reform variant selector */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-gray-700">Reform variant:</span>
-        {REFORM_VARIANTS.map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => setVariant(v)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              variant === v
-                ? 'bg-primary-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {REFORM_VARIANT_LABELS[v]}
-          </button>
-        ))}
       </div>
 
       {/* Map */}
@@ -241,6 +216,14 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
           </table>
         </div>
       </div>
+
+      {/* Methodology note */}
+      <p className="text-xs text-gray-500">
+        District estimates use PolicyEngine&apos;s district-calibrated
+        datasets (~9,000 households per district), while the statewide tab
+        uses the newer Populace dataset, so district figures do not exactly
+        aggregate to the statewide figures.
+      </p>
     </div>
   );
 }
@@ -329,7 +312,7 @@ function DistrictDetailCard({
             {childPovChange > 0 ? '+' : ''}
             {childPovChange.toFixed(2)}%
           </p>
-          <p className="text-xs text-gray-500 mt-1">vs. current law</p>
+          <p className="text-xs text-gray-500 mt-1">vs. prior law</p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">No change</p>

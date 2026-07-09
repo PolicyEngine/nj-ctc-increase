@@ -1,11 +1,13 @@
 [project]
-name = "nj-ctc-eitc-expansion"
+name = "nj-ctc-increase"
 version = "1.0.0"
-description = "New Jersey CTC and EITC expansion calculator and data pipeline"
+description = "Enacted New Jersey CTC increase calculator and data pipeline"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "policyengine-us>=1.150.0",
+    # TODO: pin to the first release containing PR #8971 (the enacted
+    # NJ CTC increase), matching POLICYENGINE_US_PIN in the Modal scripts.
+    "policyengine-us>=1.765.0",
     "numpy>=1.24.0",
 ]
 

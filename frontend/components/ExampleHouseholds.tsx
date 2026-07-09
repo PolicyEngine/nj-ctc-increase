@@ -96,7 +96,7 @@ export default function ExampleHouseholds({
     const basePath =
       process.env.NEXT_PUBLIC_BASE_PATH !== undefined
         ? process.env.NEXT_PUBLIC_BASE_PATH
-        : '/us/nj-ctc-eitc-expansion';
+        : '/us/nj-ctc-increase';
     fetch(`${basePath}/data/example_households.json`)
       .then((res) => {
         if (!res.ok) throw new Error(`Failed to load (${res.status})`);
@@ -170,8 +170,8 @@ export default function ExampleHouseholds({
         })}
       </div>
       <p className="text-[11px] text-gray-500 italic mt-2">
-        Income change is the NJ Cash Alliance combined CTC + EITC expansion
-        minus current NJ law. Single parent files head of household. Married
+        Income change is the enacted 25% NJ CTC increase (P.L.2026, c.26)
+        minus prior law. Single parent files head of household. Married
         couples file jointly with the spouse aged 35.
       </p>
     </div>

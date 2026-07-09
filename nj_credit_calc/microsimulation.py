@@ -1,10 +1,16 @@
-"""Aggregate impact calculations for the NJ CTC + EITC expansion.
+"""Aggregate impact calculations for the enacted NJ CTC increase.
 
 Uses the New Jersey state-level microsimulation dataset
 (``hf://policyengine/policyengine-us-data/states/NJ.h5``) to calculate
-the impact of forward reforms (one of ``ctc``, ``eitc``, ``combined``)
-relative to current law. Impact = reform - baseline (positive = gain
-for households).
+the impact of the enacted 25% CTC increase (S-4531 / P.L.2026, c.26)
+relative to prior law. Current law in policyengine-us (post PR #8971)
+already includes the increase, so the *baseline* sim applies the
+prior-law counterfactual and the *reform* sim is plain current law.
+Impact = reform - baseline (positive = gain for households).
+
+This is a local convenience mirror of ``scripts/modal_pipeline.py``
+(which runs on the Populace NJ slice); use it for notebooks and quick
+checks.
 """
 
 import numpy as np
@@ -30,8 +36,8 @@ _INTRA_LABELS = [
 def _poverty_metrics(baseline_rate: float, reform_rate: float):
     """Return rate change and percent change for a poverty metric.
 
-    For a forward reform, the baseline is current law and the reform
-    raises households out of poverty, so ``baseline - reform`` is the
+    The baseline is prior law and the enacted increase raises
+    households out of poverty, so ``baseline - reform`` is the
     reduction in the poverty rate.
     """
     rate_change = baseline_rate - reform_rate
@@ -45,21 +51,22 @@ def calculate_aggregate_impact(
     year: int = 2026,
     variant: str = DEFAULT_VARIANT,
 ) -> dict:
-    """Calculate the New Jersey aggregate impact of the selected reform.
+    """Calculate the New Jersey aggregate impact of the enacted increase.
 
     Args:
         year: Tax year (default 2026).
-        variant: One of ``"ctc"``, ``"eitc"``, ``"combined"``.
+        variant: Currently only ``"prior_law"`` (the counterfactual
+            applied to the baseline sim).
 
     Returns:
         Dictionary with budget, decile, intra_decile, poverty, and
         income-bracket fields. All money amounts are reform - baseline
         (positive = gain for households, negative = cost to government).
     """
-    reform = create_nj_reform(variant)
+    prior_law = create_nj_reform(variant)
 
-    sim_baseline = Microsimulation(dataset=NJ_DATASET)
-    sim_reform = Microsimulation(dataset=NJ_DATASET, reform=reform)
+    sim_baseline = Microsimulation(dataset=NJ_DATASET, reform=prior_law)
+    sim_reform = Microsimulation(dataset=NJ_DATASET)
 
     # ===== FISCAL IMPACT =====
     nj_baseline = sim_baseline.calculate(

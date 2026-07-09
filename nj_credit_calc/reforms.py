@@ -1,12 +1,17 @@
-"""Reform definitions for the NJ CTC + EITC expansion dashboard.
+"""Reform definitions for the enacted NJ CTC increase dashboard.
 
-Three forward-reform variants live as JSON at the repository root:
+New Jersey's FY2027 budget (S-4531 / P.L.2026, c.26; policyengine-us
+PR #8971) raises every NJ CTC bracket amount 25% for tax years
+2026-2028, reverting in 2029. Once policyengine-us includes that PR,
+plain current law already contains the increase, so the dashboard
+compares:
 
-- ``reform_ctc.json`` — NJ Cash Alliance CTC expansion only.
-- ``reform_eitc.json`` — NJ EITC match raised to 50% of federal.
-- ``reform_combined.json`` — both expansions applied together.
+- baseline: current law with ``reform_prior_law.json`` applied
+  (bracket amounts restored to $1,000 / $800 / $600 / $400 / $200
+  for 2026-2028), and
+- reform: plain current law (the enacted increase).
 
-Each JSON uses bracket-index segments (``credits.ctc.amount[N].amount``)
+The JSON uses bracket-index segments (``...amount.brackets[N].amount``)
 in its parameter paths, so ``Reform.from_dict`` cannot consume them
 directly. Use :func:`create_nj_reform` to build a PolicyEngine reform
 class via a manual ``modify_parameters`` walker.
@@ -22,13 +27,11 @@ from typing import Any, Dict
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 REFORM_PATHS: Dict[str, Path] = {
-    "ctc": REPO_ROOT / "reform_ctc.json",
-    "eitc": REPO_ROOT / "reform_eitc.json",
-    "combined": REPO_ROOT / "reform_combined.json",
+    "prior_law": REPO_ROOT / "reform_prior_law.json",
 }
 
 # Default variant used by helpers that do not take an explicit argument.
-DEFAULT_VARIANT = "combined"
+DEFAULT_VARIANT = "prior_law"
 
 # Public alias for backward compatibility with code that imports
 # ``REFORM_PATH``.
@@ -39,7 +42,7 @@ def load_reform(variant: str = DEFAULT_VARIANT) -> Dict[str, Any]:
     """Load the NJ reform dictionary for the given variant.
 
     Args:
-        variant: One of ``"ctc"``, ``"eitc"``, ``"combined"``.
+        variant: Currently only ``"prior_law"``.
 
     Returns:
         A dictionary of parameter overrides.
