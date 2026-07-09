@@ -13,14 +13,15 @@ import pytest
 
 DATA_DIR = Path(__file__).parent.parent / "frontend" / "public" / "data"
 EXPECTED_YEARS = [2026]
+# Statute tiers by NJ taxable income (S-4531), plus an over-ceiling row
+# that must show zero impact.
 EXPECTED_BRACKETS = {
-    "$0 - $25k",
-    "$25k - $50k",
-    "$50k - $75k",
-    "$75k - $100k",
-    "$100k - $150k",
-    "$150k - $200k",
-    "$200k+",
+    "$30k or less",
+    "$30k - $40k",
+    "$40k - $50k",
+    "$50k - $60k",
+    "$60k - $80k",
+    "Over $80k",
 }
 
 

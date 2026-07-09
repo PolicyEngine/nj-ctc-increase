@@ -221,7 +221,13 @@ export default function AggregateImpact({ triggered }: Props) {
               </table>
             </div>
             <p className="text-xs text-gray-500 mt-3 italic">
-              Income brackets use an expanded income measure at the tax unit level, following JCT methodology. Expanded income includes AGI plus tax-exempt interest, employer payroll taxes, workers&apos; compensation, nontaxable Social Security benefits, and foreign earned income exclusion. A tax unit is the unit that files a tax return (single filer or married couple filing jointly).
+              Tax units are grouped by New Jersey taxable income &mdash; the
+              credit&apos;s eligibility measure &mdash; using the statute&apos;s own
+              tiers, so no impact appears above the $80,000 ceiling. A tax
+              unit is the unit that files a tax return (single filer or
+              married couple filing jointly). Total impact here is the
+              change in NJ CTC paid, which differs slightly from the
+              household-level budgetary figures on the other tabs.
             </p>
           </div>
         </div>

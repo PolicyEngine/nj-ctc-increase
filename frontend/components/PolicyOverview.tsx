@@ -47,11 +47,11 @@ export default function PolicyOverview() {
             <p className="text-sm text-gray-600">
               The Office of Legislative Services estimates the increase
               reduces state revenue by $51.9 million in FY2027, $50.3
-              million in FY2028, and $48.7 million in FY2029 (Treasury
-              estimates $50.0 million for FY2027) — 25% of the credit&apos;s
-              $207.4 million prior-law cost. Treasury reports 232,500
-              credits claimed for tax year 2024. PolicyEngine&apos;s
-              microsimulation estimates a similar baseline.
+              million in FY2028, and $48.7 million in FY2029. The NJ
+              Treasury estimates $50.0 million for FY2027, and reports
+              232,500 credits claimed for tax year 2024 ($220.7 million).
+              PolicyEngine&apos;s microsimulation estimates $60 million for
+              tax year 2026 (see the Statewide tab).
             </p>
           </div>
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">

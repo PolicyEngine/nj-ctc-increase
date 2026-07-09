@@ -321,28 +321,38 @@ def calculate_impacts() -> dict:
     )
 
     # ===== INCOME BRACKETS =====
-    agi = sim_baseline.calculate(
-        "adjusted_gross_income", period=YEAR, map_to="household"
+    # Tax-unit level, bucketed by NJ taxable income — the credit's own
+    # eligibility measure — using the statute's tiers, so all impact
+    # lands at or below the $80k ceiling by construction. (Bucketing
+    # households by AGI instead smears benefits into higher brackets:
+    # multi-tax-unit households, and AGI > NJ taxable income.)
+    nj_taxable = np.array(
+        sim_baseline.calculate("nj_taxable_income", period=YEAR)
     )
-    agi_arr = np.array(agi)
-    beneficiary_mask = change_arr > 0
+    tu_weight = np.array(sim_baseline.calculate("tax_unit_weight", period=YEAR))
+    ctc_change_tu = np.array(
+        sim_reform.calculate("nj_ctc", period=YEAR)
+    ) - np.array(sim_baseline.calculate("nj_ctc", period=YEAR))
+    gainer_mask = ctc_change_tu > 0
 
+    # Statute tiers: "$X or under" / "over X but not over Y" (S-4531).
     income_brackets = [
-        (0, 25_000, "$0 - $25k"),
-        (25_000, 50_000, "$25k - $50k"),
-        (50_000, 75_000, "$50k - $75k"),
-        (75_000, 100_000, "$75k - $100k"),
-        (100_000, 150_000, "$100k - $150k"),
-        (150_000, 200_000, "$150k - $200k"),
-        (200_000, float("inf"), "$200k+"),
+        (-float("inf"), 30_000, "$30k or less"),
+        (30_000, 40_000, "$30k - $40k"),
+        (40_000, 50_000, "$40k - $50k"),
+        (50_000, 60_000, "$50k - $60k"),
+        (60_000, 80_000, "$60k - $80k"),
+        (80_000, float("inf"), "Over $80k"),
     ]
     by_income_bracket = []
     for min_inc, max_inc, label in income_brackets:
-        mask = (agi_arr >= min_inc) & (agi_arr < max_inc) & beneficiary_mask
-        bracket_beneficiaries = float(weight_arr[mask].sum())
+        mask = (nj_taxable > min_inc) & (nj_taxable <= max_inc) & gainer_mask
+        bracket_beneficiaries = float(tu_weight[mask].sum())
         if bracket_beneficiaries > 0:
-            bracket_cost = float((change_arr[mask] * weight_arr[mask]).sum())
-            bracket_avg = float(np.average(change_arr[mask], weights=weight_arr[mask]))
+            bracket_cost = float((ctc_change_tu[mask] * tu_weight[mask]).sum())
+            bracket_avg = float(
+                np.average(ctc_change_tu[mask], weights=tu_weight[mask])
+            )
         else:
             bracket_cost = 0.0
             bracket_avg = 0.0
