@@ -24,8 +24,8 @@ export default function PolicyOverview() {
             <h3 className="font-semibold text-gray-800 mb-2">What changed</h3>
             <p className="text-sm text-gray-600">
               Per-child credit amounts rise 25%, to{' '}
-              <strong>$1,250 / $1,000 / $750 / $500 / $250</strong> across
-              the existing $0&ndash;$30k, $30k&ndash;$40k, $40k&ndash;$50k,
+              <strong>$1,250 / $1,000 / $750 / $500 / $250</strong>{' '}
+              across the existing $0&ndash;$30k, $30k&ndash;$40k, $40k&ndash;$50k,
               $50k&ndash;$60k, and $60k&ndash;$80k taxable income tiers
               (previously $1,000 / $800 / $600 / $400 / $200). The $80,000
               income ceiling and under-6 age limit are unchanged.
@@ -50,7 +50,7 @@ export default function PolicyOverview() {
               million in FY2028, and $48.7 million in FY2029. The NJ
               Treasury estimates $50.0 million for FY2027, and reports
               232,500 credits claimed for tax year 2024 ($220.7 million).
-              PolicyEngine&apos;s microsimulation estimates $60 million for
+              PolicyEngine&apos;s microsimulation estimates $55 million for
               tax year 2026 (see the Statewide tab).
             </p>
           </div>
