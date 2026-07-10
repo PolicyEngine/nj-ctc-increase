@@ -79,6 +79,13 @@ class TestMetricsCSV:
             "losers",
             "poverty_baseline_rate",
             "poverty_reform_rate",
+            # Resident-based winner metrics drive the Winners & losers
+            # headline cards; the frontend crashes without them.
+            "residents",
+            "winners_residents",
+            "losers_residents",
+            "winners_rate_residents",
+            "losers_rate_residents",
         ]
         for year in EXPECTED_YEARS:
             year_data = [r for r in data if int(r["year"]) == year]
@@ -153,6 +160,11 @@ class TestCongressionalDistrictsCSV:
             "district",
             "average_household_income_change",
             "relative_household_income_change",
+            "winners_share",
+            "winners_share_residents",
+            "losers_share_residents",
+            "poverty_pct_change",
+            "child_poverty_pct_change",
             "state",
             "year",
         ]

@@ -15,6 +15,9 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    # The Modal pipelines' local entrypoints run in this environment
+    # (pandas comes in transitively via policyengine-us).
+    "modal>=1.0",
 ]
 
 [build-system]

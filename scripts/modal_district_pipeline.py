@@ -165,6 +165,32 @@ def calculate_district(district_id: str) -> dict:
         else:
             avg_change = rel_change = winners_share = losers_share = 0.0
 
+        # Resident-based winners/losers, matching the statewide pipeline:
+        # a resident counts as a winner when their household's net income
+        # rises by more than $1.
+        person_change = np.array(
+            sim_reform.calculate(
+                "household_net_income", period=YEAR, map_to="person"
+            )
+        ) - np.array(
+            sim_baseline.calculate(
+                "household_net_income", period=YEAR, map_to="person"
+            )
+        )
+        person_weight = np.array(
+            sim_baseline.calculate("person_weight", period=YEAR)
+        )
+        total_residents = person_weight.sum()
+        if total_residents > 0:
+            winners_share_residents = (
+                person_weight[person_change > 1].sum() / total_residents
+            )
+            losers_share_residents = (
+                person_weight[person_change < -1].sum() / total_residents
+            )
+        else:
+            winners_share_residents = losers_share_residents = 0.0
+
         try:
             spm_unit_weight = np.array(
                 sim_baseline.calculate("spm_unit_weight", period=YEAR)
@@ -215,6 +241,8 @@ def calculate_district(district_id: str) -> dict:
             "relative_household_income_change": round(float(rel_change), 6),
             "winners_share": round(float(winners_share), 4),
             "losers_share": round(float(losers_share), 4),
+            "winners_share_residents": round(float(winners_share_residents), 4),
+            "losers_share_residents": round(float(losers_share_residents), 4),
             "poverty_pct_change": round(float(poverty_pct_change), 2),
             "child_poverty_pct_change": round(float(child_poverty_pct_change), 2),
             "state": NJ_STATE,

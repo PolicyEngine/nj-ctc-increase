@@ -197,8 +197,8 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
                     {d.party ? <span className="ml-1 text-xs">({d.party})</span> : null}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-700">
-                    {d.winners_share !== undefined
-                      ? `${(d.winners_share * 100).toFixed(1)}%`
+                    {(d.winners_share_residents ?? d.winners_share) !== undefined
+                      ? `${((d.winners_share_residents ?? d.winners_share)! * 100).toFixed(1)}%`
                       : '—'}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-700">
@@ -219,11 +219,12 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
 
       {/* Methodology note */}
       <p className="text-xs text-gray-500">
-        District estimates use PolicyEngine&apos;s district-calibrated
-        datasets (~9,000 households per district), from the same enhanced
-        CPS family as the statewide estimates. District figures may not
-        exactly aggregate to statewide figures because each district file
-        is calibrated independently.
+        Winners are residents whose household&apos;s net income rises,
+        matching the statewide tab. District estimates use
+        PolicyEngine&apos;s district-calibrated datasets (~9,000 households
+        per district), from the same enhanced CPS family as the statewide
+        estimates. District figures may not exactly aggregate to statewide
+        figures because each district file is calibrated independently.
       </p>
     </div>
   );
@@ -239,8 +240,10 @@ function DistrictDetailCard({
   const avgChange = district.average_household_income_change;
   const isPositive = avgChange > 0;
   const isNegative = avgChange < 0;
-  const winnersShare = district.winners_share ?? 0;
-  const losersShare = district.losers_share ?? 0;
+  const winnersShare =
+    district.winners_share_residents ?? district.winners_share ?? 0;
+  const losersShare =
+    district.losers_share_residents ?? district.losers_share ?? 0;
   // "No change" is the residual after winners + losers.
   const noChangeShare = Math.max(0, 1 - winnersShare - losersShare);
   const childPovChange = district.child_poverty_pct_change ?? 0;
@@ -301,7 +304,7 @@ function DistrictDetailCard({
           <p className="text-xl font-bold text-teal-600">
             {(winnersShare * 100).toFixed(1)}%
           </p>
-          <p className="text-xs text-gray-500 mt-1">of households gain</p>
+          <p className="text-xs text-gray-500 mt-1">of residents gain</p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Child poverty change</p>
@@ -320,7 +323,7 @@ function DistrictDetailCard({
           <p className="text-xl font-bold text-gray-600">
             {(noChangeShare * 100).toFixed(1)}%
           </p>
-          <p className="text-xs text-gray-500 mt-1">of households</p>
+          <p className="text-xs text-gray-500 mt-1">of residents</p>
         </div>
       </div>
     </div>

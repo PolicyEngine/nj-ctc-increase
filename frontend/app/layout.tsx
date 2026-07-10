@@ -14,7 +14,7 @@ const inter = Inter({
 
 const SITE_URL = 'https://policyengine.org/us/nj-ctc-increase';
 
-const SITE_TITLE = 'NJ Child Tax Credit Increase Calculator';
+const SITE_TITLE = 'NJ Child Tax Credit increase calculator';
 const SITE_DESCRIPTION =
   'Interactive analysis of New Jersey\'s enacted 25% Child Tax Credit increase for tax years 2026-2028 (S-4531 / P.L.2026, c.26).';
 

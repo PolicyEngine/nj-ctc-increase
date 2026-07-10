@@ -40,22 +40,36 @@ for NJ, so the dashboard emphasizes poverty *changes*. District files
 are calibrated independently, so district figures may not exactly
 aggregate to statewide figures.
 
+## Development
+
+```bash
+make install   # npm ci (frontend) + uv sync --extra dev (Python)
+make dev       # frontend dev server
+make test      # pytest + vitest
+make lint
+```
+
+The frontend is npm-canonical (`package-lock.json`); CI runs both test
+suites plus lint and a production build on every PR.
+
 ## Refreshing data
 
 policyengine-us is pinned to 1.768.2 (the first release containing
 PR #8971) in `pyproject.toml` and the Modal images
 (`POLICYENGINE_US_PIN`). To refresh after a pin bump:
 
-1. `modal run scripts/modal_pipeline.py`
-2. `modal run scripts/modal_district_pipeline.py`
-3. `uv run scripts/compute_example_households.py` — computes locally
-   with the pinned policyengine-us (no API dependency) and writes
+1. `make pipeline` — statewide CSVs (Modal)
+2. `make pipeline-districts` — `congressional_districts.csv` (Modal)
+3. `make households` — computes locally with the pinned
+   policyengine-us (no API dependency) and writes
    `frontend/public/data/example_households.json`.
-4. `modal deploy scripts/modal_household_endpoint.py` — redeploy the
-   household backend whenever the pin or `nj_credit_calc` changes
-   (bump `BUILD_REV` so cached results don't leak across builds).
+4. `make deploy-household-endpoint` — redeploy the household backend
+   whenever the pin or `nj_credit_calc` changes (bump `BUILD_REV` in
+   the script so cached results don't leak across builds).
 
 Both pipelines fail loudly if the pinned release does not contain the
 enacted increase (baseline CTC totals would equal current-law totals).
 
-Live: <https://nj-ctc-increase.vercel.app/us/nj-ctc-increase>
+Live: <https://nj-ctc-increase.vercel.app/us/nj-ctc-increase> (also
+served at <https://policyengine.org/us/nj-ctc-increase> via the
+policyengine-app-v2 multizone registry)

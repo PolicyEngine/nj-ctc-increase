@@ -12,6 +12,8 @@ export interface NJDistrictData {
   relative_household_income_change: number;
   winners_share?: number;
   losers_share?: number;
+  winners_share_residents?: number;
+  losers_share_residents?: number;
   poverty_pct_change?: number;
   child_poverty_pct_change?: number;
   state?: string;
@@ -343,8 +345,8 @@ export default function NJDistrictChoroplethMap({
       )}
 
       <p className="text-xs text-gray-500 text-center mt-4">
-        Average household impact under the selected reform variant, by New
-        Jersey congressional district (119th Congress, state FIPS 34)
+        Average household impact of the enacted 25% CTC increase vs. prior
+        law, by New Jersey congressional district (119th Congress)
       </p>
     </div>
   );
