@@ -148,8 +148,8 @@ export default function ImpactAnalysis({
     return (
       <div
         style={{
-          background: 'var(--chart-tooltip-bg, #fff)',
-          border: '1px solid var(--chart-tooltip-border, #e5e7eb)',
+          background: 'var(--chart-tooltip-bg)',
+          border: '1px solid var(--chart-tooltip-border)',
           borderRadius: 4,
           padding: '8px 12px',
           fontFamily: 'var(--font-sans)',

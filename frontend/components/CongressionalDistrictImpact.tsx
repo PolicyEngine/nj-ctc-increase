@@ -25,9 +25,9 @@ const NJ_REPRESENTATIVES: Record<string, { name: string; party: 'R' | 'D' }> = {
 };
 
 function partyColor(party: 'R' | 'D' | undefined) {
-  if (party === 'R') return '#dc2626';
-  if (party === 'D') return '#2563eb';
-  return '#6b7280';
+  if (party === 'R') return 'var(--party-r)';
+  if (party === 'D') return 'var(--party-d)';
+  return 'var(--party-none)';
 }
 
 export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
@@ -180,7 +180,7 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
                 <tr
                   key={d.district_number}
                   className={`border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                    selectedDistrict === d.district_number ? 'bg-teal-50' : ''
+                    selectedDistrict === d.district_number ? 'bg-primary-50' : ''
                   }`}
                   onClick={() =>
                     setSelectedDistrict((prev) =>
@@ -254,7 +254,13 @@ function DistrictDetailCard({
         <div className="flex items-center gap-3">
           <span
             className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-white font-bold text-lg"
-            style={{ backgroundColor: isPositive ? '#319795' : isNegative ? '#dc2626' : '#475569' }}
+            style={{
+              backgroundColor: isPositive
+                ? 'var(--chart-1)'
+                : isNegative
+                  ? 'var(--destructive)'
+                  : 'var(--muted-foreground)',
+            }}
           >
             {district.district_number}
           </span>
@@ -289,7 +295,7 @@ function DistrictDetailCard({
           </p>
           <p
             className={`text-xl font-bold ${
-              isPositive ? 'text-teal-700' : isNegative ? 'text-red-700' : 'text-gray-700'
+              isPositive ? 'text-primary-700' : isNegative ? 'text-red-700' : 'text-gray-700'
             }`}
           >
             {isPositive ? '+' : ''}
@@ -301,7 +307,7 @@ function DistrictDetailCard({
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Winners</p>
-          <p className="text-xl font-bold text-teal-600">
+          <p className="text-xl font-bold text-primary-600">
             {(winnersShare * 100).toFixed(1)}%
           </p>
           <p className="text-xs text-gray-500 mt-1">of residents gain</p>
@@ -310,7 +316,7 @@ function DistrictDetailCard({
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Child poverty change</p>
           <p
             className={`text-xl font-bold ${
-              childPovChange < 0 ? 'text-teal-700' : childPovChange > 0 ? 'text-red-700' : 'text-gray-700'
+              childPovChange < 0 ? 'text-primary-700' : childPovChange > 0 ? 'text-red-700' : 'text-gray-700'
             }`}
           >
             {childPovChange > 0 ? '+' : ''}
