@@ -319,7 +319,7 @@ export default function AggregateImpact({ triggered }: Props) {
               </ResponsiveContainer>
             <ChartWatermark />
             <p className="text-xs text-gray-500 mt-3 italic">
-              Distributional impacts are calculated at the household level. A household may contain multiple tax units (e.g., an adult child living with parents who files separately).
+              Distributional impacts are calculated at the household level, with deciles ranked by combined household income. A household can contain multiple tax units, so gains can appear in higher deciles: a family with a young child living with higher-earning parents or other relatives files its own return, and its taxable income can qualify for the NJ CTC even though the combined household lands in an upper decile.
             </p>
           </div>
         );
