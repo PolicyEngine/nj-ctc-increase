@@ -28,18 +28,11 @@ export default function PolicyOverview() {
               across the existing $0&ndash;$30k, $30k&ndash;$40k, $40k&ndash;$50k,
               $50k&ndash;$60k, and $60k&ndash;$80k taxable income tiers
               (previously $1,000 / $800 / $600 / $400 / $200). The $80,000
-              income ceiling and under-6 age limit are unchanged.
-            </p>
-          </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-2">
-              Effective 2026&ndash;2028
-            </h3>
-            <p className="text-sm text-gray-600">
-              The higher amounts apply for tax years 2026, 2027, and 2028,
-              and revert to prior levels in 2029. This dashboard models tax
-              year 2026; impacts are reported relative to prior law (the
-              pre-increase credit amounts).
+              income ceiling and under-6 age limit are unchanged. The
+              higher amounts apply for tax years 2026, 2027, and 2028,
+              and revert to prior levels in 2029. This dashboard models
+              tax year 2026; impacts are reported relative to prior law
+              (the pre-increase credit amounts).
             </p>
           </div>
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
@@ -52,15 +45,6 @@ export default function PolicyOverview() {
               232,500 credits claimed for tax year 2024 ($220.7 million).
               PolicyEngine&apos;s microsimulation estimates $55 million for
               tax year 2026 (see the Statewide tab).
-            </p>
-          </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Who benefits</h3>
-            <p className="text-sm text-gray-600">
-              Families with children age 5 or younger and taxable income of
-              $80,000 or less. The credit is refundable and is claimed on
-              the NJ-1040; it is available to all filing statuses except
-              married filing separately.
             </p>
           </div>
         </div>

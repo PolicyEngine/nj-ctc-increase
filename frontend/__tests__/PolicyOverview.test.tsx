@@ -10,12 +10,12 @@ describe('PolicyOverview', () => {
     ).toBeInTheDocument();
   });
 
-  it('displays the four summary cards', () => {
+  it('displays the two summary cards', () => {
     render(<PolicyOverview />);
     expect(screen.getByText('What changed')).toBeInTheDocument();
-    expect(screen.getByText('Effective 2026–2028')).toBeInTheDocument();
     expect(screen.getByText('Cost')).toBeInTheDocument();
-    expect(screen.getByText('Who benefits')).toBeInTheDocument();
+    expect(screen.queryByText('Who benefits')).not.toBeInTheDocument();
+    expect(screen.queryByText('Effective 2026–2028')).not.toBeInTheDocument();
   });
 
   it('displays the credit amounts table with all five brackets', () => {

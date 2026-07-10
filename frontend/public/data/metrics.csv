@@ -11,6 +11,11 @@ year,metric,value
 2026,losers,0.0
 2026,winners_rate,6.345211218194606
 2026,losers_rate,0.0
+2026,residents,9541070.0
+2026,winners_residents,1026801.0625
+2026,losers_residents,0.0
+2026,winners_rate_residents,10.761906814434859
+2026,losers_rate_residents,0.0
 2026,poverty_baseline_rate,17.27655306905234
 2026,poverty_reform_rate,17.202832474404918
 2026,poverty_rate_change,-0.07372059464742264

@@ -118,6 +118,12 @@ export default function AggregateImpact({ triggered }: Props) {
     if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(1)}M`;
     return formatCurrencyWithSign(value);
   };
+  // Population counts are microsimulation estimates, not administrative
+  // tallies — round to the nearest thousand so they read as such.
+  const formatEstimatedCount = (value: number) =>
+    value >= 1000
+      ? `${(Math.round(value / 1000) * 1000).toLocaleString('en-US')}`
+      : `${Math.round(value).toLocaleString('en-US')}`;
 
   // Section tabs
   const sections = [
@@ -206,7 +212,7 @@ export default function AggregateImpact({ triggered }: Props) {
                   {data.by_income_bracket.map((bracket, index) => (
                     <tr key={index} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-gray-900">{bracket.bracket}</td>
-                      <td className="px-4 py-3 text-gray-700 text-right">{Math.round(bracket.beneficiaries).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-gray-700 text-right">{formatEstimatedCount(bracket.beneficiaries)}</td>
                       <td className="px-4 py-3 font-semibold text-right"
                         style={{ color: bracket.total_cost >= 0 ? COLORS.positive : COLORS.negative }}>
                         {formatBillions(bracket.total_cost)}
@@ -350,19 +356,19 @@ export default function AggregateImpact({ triggered }: Props) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="rounded-lg p-6 border" style={{ backgroundColor: 'var(--chart-winners-bg)', borderColor: COLORS.positive }}>
                 <p className="text-sm text-gray-700 mb-2">Winners</p>
-                <p className="text-3xl font-bold" style={{ color: COLORS.gainMore5 }}>{data.winners_rate.toFixed(1)}%</p>
-                <p className="text-xs text-gray-600 mt-1">{Math.round(data.winners).toLocaleString()} households gain</p>
+                <p className="text-3xl font-bold" style={{ color: COLORS.gainMore5 }}>{data.winners_rate_residents.toFixed(1)}%</p>
+                <p className="text-xs text-gray-600 mt-1">{formatEstimatedCount(data.winners_residents)} residents gain</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-300">
                 <p className="text-sm text-gray-700 mb-2">No change</p>
                 <p className="text-3xl font-bold text-gray-600">
-                  {(100 - data.winners_rate - data.losers_rate).toFixed(1)}%
+                  {(100 - data.winners_rate_residents - data.losers_rate_residents).toFixed(1)}%
                 </p>
               </div>
               <div className="rounded-lg p-6 border" style={{ backgroundColor: 'var(--chart-losers-bg)', borderColor: COLORS.loseMore5 }}>
                 <p className="text-sm text-gray-700 mb-2">Losers</p>
-                <p className="text-3xl font-bold" style={{ color: COLORS.loseMore5 }}>{data.losers_rate.toFixed(1)}%</p>
-                <p className="text-xs text-gray-600 mt-1">{Math.round(data.losers).toLocaleString()} households lose</p>
+                <p className="text-3xl font-bold" style={{ color: COLORS.loseMore5 }}>{data.losers_rate_residents.toFixed(1)}%</p>
+                <p className="text-xs text-gray-600 mt-1">{formatEstimatedCount(data.losers_residents)} residents lose</p>
               </div>
             </div>
 
@@ -392,7 +398,7 @@ export default function AggregateImpact({ triggered }: Props) {
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-3 italic">
-                  Winners and losers are calculated at the household level. A household may contain multiple tax units (e.g., an adult child living with parents who files separately). Some households in higher income deciles may see gains because one tax unit within the household qualifies for the increased NJ CTC while others do not.
+                  Shares show New Jersey residents, grouped by their household&apos;s income decile; a resident counts as a winner when their household&apos;s net income rises. A household may contain multiple tax units (e.g., an adult child living with parents who files separately), so some residents in higher deciles gain because one tax unit in their household qualifies for the increased NJ CTC.
                 </p>
               </div>
             </div>
@@ -494,7 +500,13 @@ export default function AggregateImpact({ triggered }: Props) {
       })()}
 
       <p className="text-sm text-gray-500 bg-gray-50 rounded-lg px-4 py-3 border border-gray-200">
-        These estimates are static: they do not capture behavioral responses such as changes in labor supply, tax avoidance, or migration.
+        All figures are microsimulation estimates, not administrative
+        counts: PolicyEngine simulates the tax code over an enhanced
+        version of the Current Population Survey — a calibrated,
+        synthetic dataset combining survey and administrative data —
+        so population counts are rounded to the nearest thousand.
+        Estimates are static: they do not capture behavioral responses
+        such as changes in labor supply, tax avoidance, or migration.
       </p>
     </div>
   );

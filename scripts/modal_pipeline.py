@@ -199,6 +199,27 @@ def calculate_impacts() -> dict:
     winners_rate = winners / total_households * 100 if total_households else 0.0
     losers_rate = losers / total_households * 100 if total_households else 0.0
 
+    # Resident-based winners/losers: a resident counts as a winner when
+    # their household's net income rises (matches the person-weighted
+    # intra-decile chart).
+    person_change = np.array(
+        sim_reform.calculate("household_net_income", period=YEAR, map_to="person")
+    ) - np.array(
+        sim_baseline.calculate("household_net_income", period=YEAR, map_to="person")
+    )
+    person_weight = np.array(
+        sim_baseline.calculate("person_weight", period=YEAR)
+    )
+    total_residents = float(person_weight.sum())
+    winners_residents = float(person_weight[person_change > 1].sum())
+    losers_residents = float(person_weight[person_change < -1].sum())
+    winners_rate_residents = (
+        winners_residents / total_residents * 100 if total_residents else 0.0
+    )
+    losers_rate_residents = (
+        losers_residents / total_residents * 100 if total_residents else 0.0
+    )
+
     # ===== INCOME DECILE =====
     decile = sim_baseline.calculate(
         "household_income_decile", period=YEAR, map_to="household"
@@ -376,6 +397,11 @@ def calculate_impacts() -> dict:
         "losers": losers,
         "winners_rate": winners_rate,
         "losers_rate": losers_rate,
+        "residents": total_residents,
+        "winners_residents": winners_residents,
+        "losers_residents": losers_residents,
+        "winners_rate_residents": winners_rate_residents,
+        "losers_rate_residents": losers_rate_residents,
         "poverty_baseline_rate": poverty_baseline_rate,
         "poverty_reform_rate": poverty_reform_rate,
         "poverty_rate_change": poverty_rate_change,
@@ -427,6 +453,11 @@ def _save_csvs(result: dict, output_dir: str) -> None:
         ("losers", result["losers"]),
         ("winners_rate", result["winners_rate"]),
         ("losers_rate", result["losers_rate"]),
+        ("residents", result["residents"]),
+        ("winners_residents", result["winners_residents"]),
+        ("losers_residents", result["losers_residents"]),
+        ("winners_rate_residents", result["winners_rate_residents"]),
+        ("losers_rate_residents", result["losers_rate_residents"]),
         ("poverty_baseline_rate", result["poverty_baseline_rate"]),
         ("poverty_reform_rate", result["poverty_reform_rate"]),
         ("poverty_rate_change", result["poverty_rate_change"]),

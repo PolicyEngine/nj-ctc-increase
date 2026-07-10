@@ -109,6 +109,11 @@ export interface AggregateImpactResponse {
   losers: number;
   winners_rate: number;
   losers_rate: number;
+  residents: number;
+  winners_residents: number;
+  losers_residents: number;
+  winners_rate_residents: number;
+  losers_rate_residents: number;
   poverty_baseline_rate: number;
   poverty_reform_rate: number;
   poverty_rate_change: number;
