@@ -24,6 +24,66 @@ interface Props {
   precomputed?: HouseholdImpactResponse | null;
 }
 
+const formatCurrency = (value: number) =>
+  `$${Math.round(value).toLocaleString('en-US')}`;
+const formatCurrencyWithSign = (value: number) => {
+  const formatted = formatCurrency(Math.abs(value));
+  if (value > 0) return `+${formatted}`;
+  if (value < 0) return `-${formatted}`;
+  return formatted;
+};
+const formatIncome = (value: number) => {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  return `$${(value / 1000).toFixed(0)}k`;
+};
+
+// Custom tooltip that shows all three deltas at the hovered income point.
+// Module-level so it is not recreated on every render
+// (react-hooks/static-components).
+const HoverTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: {
+    income: number;
+    federalTaxChange: number;
+    stateTaxChange: number;
+    netIncomeChange: number;
+  } }>;
+  label?: number;
+}) => {
+  if (!active || !payload || !payload.length) return null;
+  const p = payload[0].payload;
+  const incomeLabel = typeof label === 'number' ? label : p.income;
+  return (
+    <div
+      style={{
+        background: 'var(--chart-tooltip-bg)',
+        border: '1px solid var(--chart-tooltip-border)',
+        borderRadius: 4,
+        padding: '8px 12px',
+        fontFamily: 'var(--font-sans)',
+        fontSize: 12,
+      }}
+    >
+      <p style={{ margin: '0 0 4px', fontWeight: 600 }}>
+        Income: {formatCurrency(Math.round(incomeLabel / 100) * 100)}
+      </p>
+      <p style={{ margin: 0 }}>
+        Federal tax change: {formatCurrencyWithSign(p.federalTaxChange)}
+      </p>
+      <p style={{ margin: 0 }}>
+        New Jersey state tax change: {formatCurrencyWithSign(p.stateTaxChange)}
+      </p>
+      <p style={{ margin: 0, fontWeight: 600 }}>
+        Net income change: {formatCurrencyWithSign(p.netIncomeChange)}
+      </p>
+    </div>
+  );
+};
+
 export default function ImpactAnalysis({
   request,
   triggered,
@@ -63,19 +123,6 @@ export default function ImpactAnalysis({
   }
 
   if (!data) return null;
-
-  const formatCurrency = (value: number) =>
-    `$${Math.round(value).toLocaleString('en-US')}`;
-  const formatCurrencyWithSign = (value: number) => {
-    const formatted = formatCurrency(Math.abs(value));
-    if (value > 0) return `+${formatted}`;
-    if (value < 0) return `-${formatted}`;
-    return formatted;
-  };
-  const formatIncome = (value: number) => {
-    if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-    return `$${(value / 1000).toFixed(0)}k`;
-  };
 
   const benefitData = data.benefit_at_income;
 
@@ -122,51 +169,6 @@ export default function ImpactAnalysis({
           }`}
         >
           {value !== 0 ? `${formatCurrencyWithSign(value)}/year` : '$0/year'}
-        </p>
-      </div>
-    );
-  };
-
-  // Custom tooltip that shows all three deltas at the hovered income point.
-  const HoverTooltip = ({
-    active,
-    payload,
-    label,
-  }: {
-    active?: boolean;
-    payload?: Array<{ payload: {
-      income: number;
-      federalTaxChange: number;
-      stateTaxChange: number;
-      netIncomeChange: number;
-    } }>;
-    label?: number;
-  }) => {
-    if (!active || !payload || !payload.length) return null;
-    const p = payload[0].payload;
-    const incomeLabel = typeof label === 'number' ? label : p.income;
-    return (
-      <div
-        style={{
-          background: 'var(--chart-tooltip-bg)',
-          border: '1px solid var(--chart-tooltip-border)',
-          borderRadius: 4,
-          padding: '8px 12px',
-          fontFamily: 'var(--font-sans)',
-          fontSize: 12,
-        }}
-      >
-        <p style={{ margin: '0 0 4px', fontWeight: 600 }}>
-          Income: {formatCurrency(Math.round(incomeLabel / 100) * 100)}
-        </p>
-        <p style={{ margin: 0 }}>
-          Federal tax change: {formatCurrencyWithSign(p.federalTaxChange)}
-        </p>
-        <p style={{ margin: 0 }}>
-          New Jersey state tax change: {formatCurrencyWithSign(p.stateTaxChange)}
-        </p>
-        <p style={{ margin: 0, fontWeight: 600 }}>
-          Net income change: {formatCurrencyWithSign(p.netIncomeChange)}
         </p>
       </div>
     );

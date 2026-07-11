@@ -41,8 +41,10 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
       ? process.env.NEXT_PUBLIC_BASE_PATH
       : '/us/nj-ctc-increase';
 
-    setLoading(true);
-    setError(null);
+    // Initial state already covers loading/error; setting them
+    // synchronously here trips react-hooks' cascading-render lint and
+    // is only needed if `year` ever changes mid-session (it does not).
+    let cancelled = false;
 
     fetch(`${basePath}/data/congressional_districts.csv`)
       .then((res) => {
@@ -81,13 +83,19 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
           .sort((a, b) =>
             Number(a.district_number) - Number(b.district_number)
           );
+        if (cancelled) return;
         setData(njRows);
         setLoading(false);
       })
       .catch((err) => {
+        if (cancelled) return;
         setError(err.message);
         setLoading(false);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [year]);
 
   if (loading) {

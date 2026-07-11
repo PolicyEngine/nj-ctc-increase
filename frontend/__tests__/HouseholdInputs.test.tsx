@@ -1,6 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock the API to prevent actual network calls
 vi.mock('../lib/api', () => ({

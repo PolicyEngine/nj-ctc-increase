@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AggregateImpact from '../components/AggregateImpact';
 
 // Mock fetch for CSV loading
@@ -57,7 +57,7 @@ const mockIncomeBracketsCSV = `year,bracket,beneficiaries,total_cost,avg_benefit
 
 beforeEach(() => {
   global.fetch = vi.fn((url: string) => {
-    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    const _basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
     if (url.includes('metrics.csv')) {
       return Promise.resolve({ ok: true, text: () => Promise.resolve(mockMetricsCSV) });
