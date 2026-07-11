@@ -245,7 +245,12 @@ export default function AggregateImpact({ triggered }: Props) {
         const rawValues = isRelative
           ? Object.values(data.decile.relative).map(v => v * 100)
           : Object.values(data.decile.average);
-        const maxAbs = Math.max(...rawValues.map(Math.abs));
+        // Floor like the poverty chart so an all-zero series still yields a
+        // finite step (toFixed accepts at most 100 digits).
+        const maxAbs = Math.max(
+          ...rawValues.map(Math.abs),
+          isRelative ? 0.01 : 1,
+        );
         const niceStep = (() => {
           const rough = maxAbs / 3;
           const mag = Math.pow(10, Math.floor(Math.log10(rough)));

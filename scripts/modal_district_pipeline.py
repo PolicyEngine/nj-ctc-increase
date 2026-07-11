@@ -167,29 +167,23 @@ def calculate_district(district_id: str) -> dict:
 
         # Resident-based winners/losers, matching the statewide pipeline:
         # a resident counts as a winner when their household's net income
-        # rises by more than $1.
-        person_change = np.array(
-            sim_reform.calculate(
-                "household_net_income", period=YEAR, map_to="person"
-            )
-        ) - np.array(
-            sim_baseline.calculate(
-                "household_net_income", period=YEAR, map_to="person"
-            )
+        # rises by more than $1. The MicroSeries comparison keeps the
+        # engine-attached person weights, so .mean() is the weighted
+        # resident share.
+        person_change = sim_reform.calculate(
+            "household_net_income", period=YEAR, map_to="person"
+        ) - sim_baseline.calculate(
+            "household_net_income", period=YEAR, map_to="person"
         )
-        person_weight = np.array(
-            sim_baseline.calculate("person_weight", period=YEAR)
-        )
-        total_residents = person_weight.sum()
-        if total_residents > 0:
-            winners_share_residents = (
-                person_weight[person_change > 1].sum() / total_residents
+        winners_share_residents = float((person_change > 1).mean())
+        losers_share_residents = float((person_change < -1).mean())
+        if not (
+            np.isfinite(winners_share_residents)
+            and np.isfinite(losers_share_residents)
+        ):
+            raise RuntimeError(
+                f"Non-finite resident winner/loser shares for {district_id}"
             )
-            losers_share_residents = (
-                person_weight[person_change < -1].sum() / total_residents
-            )
-        else:
-            winners_share_residents = losers_share_residents = 0.0
 
         try:
             spm_unit_weight = np.array(

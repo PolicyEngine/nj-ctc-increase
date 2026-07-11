@@ -57,6 +57,9 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
           const row: Record<string, string | number> = {};
           headers.forEach((h, i) => {
             const val = values[i];
+            // Blank cells become undefined (not 0) so downstream
+            // nullish fallbacks work.
+            if (val === undefined || val === '') return;
             row[h] = isNaN(Number(val)) ? val : Number(val);
           });
           return row as unknown as NJDistrictData & { state: string; year: number };
@@ -240,10 +243,19 @@ function DistrictDetailCard({
   const avgChange = district.average_household_income_change;
   const isPositive = avgChange > 0;
   const isNegative = avgChange < 0;
-  const winnersShare =
-    district.winners_share_residents ?? district.winners_share ?? 0;
-  const losersShare =
-    district.losers_share_residents ?? district.losers_share ?? 0;
+  // Use one population basis for the whole card — residents when both
+  // resident shares are present, otherwise households — so the residual
+  // "no change" share never mixes denominators.
+  const hasResidentShares =
+    district.winners_share_residents !== undefined &&
+    district.losers_share_residents !== undefined;
+  const winnersShare = hasResidentShares
+    ? district.winners_share_residents!
+    : district.winners_share ?? 0;
+  const losersShare = hasResidentShares
+    ? district.losers_share_residents!
+    : district.losers_share ?? 0;
+  const basisLabel = hasResidentShares ? 'residents' : 'households';
   // "No change" is the residual after winners + losers.
   const noChangeShare = Math.max(0, 1 - winnersShare - losersShare);
   const childPovChange = district.child_poverty_pct_change ?? 0;
@@ -310,7 +322,7 @@ function DistrictDetailCard({
           <p className="text-xl font-bold text-primary-600">
             {(winnersShare * 100).toFixed(1)}%
           </p>
-          <p className="text-xs text-gray-500 mt-1">of residents gain</p>
+          <p className="text-xs text-gray-500 mt-1">of {basisLabel} gain</p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Child poverty change</p>
@@ -329,7 +341,7 @@ function DistrictDetailCard({
           <p className="text-xl font-bold text-gray-600">
             {(noChangeShare * 100).toFixed(1)}%
           </p>
-          <p className="text-xs text-gray-500 mt-1">of residents</p>
+          <p className="text-xs text-gray-500 mt-1">of {basisLabel}</p>
         </div>
       </div>
     </div>
