@@ -1,11 +1,14 @@
-/** @type {import('next').NextConfig} */
-const path = require('path');
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Use empty string for local dev (NEXT_PUBLIC_BASE_PATH=""), otherwise default to production path
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH !== undefined
   ? process.env.NEXT_PUBLIC_BASE_PATH
   : "/us/nj-ctc-increase";
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   ...(basePath ? { basePath } : {}),
   output: "standalone",
@@ -14,4 +17,4 @@ const nextConfig = {
   outputFileTracingRoot: path.join(__dirname),
 };
 
-module.exports = nextConfig;
+export default nextConfig;

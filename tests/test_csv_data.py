@@ -28,9 +28,21 @@ EXPECTED_BRACKETS = {
 def _load_csv(filename: str):
     path = DATA_DIR / filename
     if not path.exists():
-        pytest.skip(f"{filename} not generated yet")
+        # The CSVs are committed artifacts the deployed dashboard reads
+        # directly; a missing file is a broken deploy, not a skip.
+        pytest.fail(f"{filename} is missing from {DATA_DIR}")
     with open(path, "r") as f:
         return list(csv.DictReader(f))
+
+
+def _as_finite_float(value, context: str) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        pytest.fail(f"{context} is not numeric: {value!r}")
+    if number != number or number in (float("inf"), float("-inf")):
+        pytest.fail(f"{context} is not finite: {value!r}")
+    return number
 
 
 class TestDistributionalImpactCSV:
@@ -79,6 +91,13 @@ class TestMetricsCSV:
             "losers",
             "poverty_baseline_rate",
             "poverty_reform_rate",
+            # Resident-based winner metrics drive the Winners & losers
+            # headline cards; the frontend crashes without them.
+            "residents",
+            "winners_residents",
+            "losers_residents",
+            "winners_rate_residents",
+            "losers_rate_residents",
         ]
         for year in EXPECTED_YEARS:
             year_data = [r for r in data if int(r["year"]) == year]
@@ -87,6 +106,13 @@ class TestMetricsCSV:
                 assert metric in metrics, (
                     f"Missing metric '{metric}' for year {year}"
                 )
+
+    def test_values_are_finite_numbers(self):
+        """The frontend calls .toFixed() on these — a non-numeric value
+        crashes the Winners & losers cards."""
+        data = _load_csv("metrics.csv")
+        for row in data:
+            _as_finite_float(row["value"], f"metrics.csv {row['metric']}")
 
 
 class TestWinnersLosersCSV:
@@ -153,6 +179,11 @@ class TestCongressionalDistrictsCSV:
             "district",
             "average_household_income_change",
             "relative_household_income_change",
+            "winners_share",
+            "winners_share_residents",
+            "losers_share_residents",
+            "poverty_pct_change",
+            "child_poverty_pct_change",
             "state",
             "year",
         ]
@@ -165,6 +196,37 @@ class TestCongressionalDistrictsCSV:
         data = _load_csv("congressional_districts.csv")
         states = {r["state"] for r in data}
         assert states == {"NJ"}, f"Expected only NJ rows, got {states}"
+
+    def test_rows_are_valid(self):
+        """One 2026 row per district with finite, in-range values."""
+        data = _load_csv("congressional_districts.csv")
+        assert len(data) == 12, f"Expected 12 rows, got {len(data)}"
+        ids = [r["district"] for r in data]
+        assert len(set(ids)) == 12, f"Duplicate district rows: {ids}"
+        share_cols = [
+            "winners_share",
+            "losers_share",
+            "winners_share_residents",
+            "losers_share_residents",
+        ]
+        numeric_cols = share_cols + [
+            "average_household_income_change",
+            "relative_household_income_change",
+            "poverty_pct_change",
+            "child_poverty_pct_change",
+        ]
+        for row in data:
+            assert int(row["year"]) == 2026, (
+                f"{row['district']} has year {row['year']}, expected 2026"
+            )
+            for col in numeric_cols:
+                value = _as_finite_float(
+                    row[col], f"{row['district']} {col}"
+                )
+                if col in share_cols:
+                    assert 0.0 <= value <= 1.0, (
+                        f"{row['district']} {col}={value} outside [0, 1]"
+                    )
 
     def test_twelve_districts(self):
         """New Jersey has 12 congressional districts."""

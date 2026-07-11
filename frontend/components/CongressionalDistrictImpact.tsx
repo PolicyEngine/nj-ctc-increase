@@ -25,9 +25,9 @@ const NJ_REPRESENTATIVES: Record<string, { name: string; party: 'R' | 'D' }> = {
 };
 
 function partyColor(party: 'R' | 'D' | undefined) {
-  if (party === 'R') return '#dc2626';
-  if (party === 'D') return '#2563eb';
-  return '#6b7280';
+  if (party === 'R') return 'var(--party-r)';
+  if (party === 'D') return 'var(--party-d)';
+  return 'var(--party-none)';
 }
 
 export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
@@ -41,8 +41,10 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
       ? process.env.NEXT_PUBLIC_BASE_PATH
       : '/us/nj-ctc-increase';
 
-    setLoading(true);
-    setError(null);
+    // Initial state already covers loading/error; setting them
+    // synchronously here trips react-hooks' cascading-render lint and
+    // is only needed if `year` ever changes mid-session (it does not).
+    let cancelled = false;
 
     fetch(`${basePath}/data/congressional_districts.csv`)
       .then((res) => {
@@ -57,6 +59,9 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
           const row: Record<string, string | number> = {};
           headers.forEach((h, i) => {
             const val = values[i];
+            // Blank cells become undefined (not 0) so downstream
+            // nullish fallbacks work.
+            if (val === undefined || val === '') return;
             row[h] = isNaN(Number(val)) ? val : Number(val);
           });
           return row as unknown as NJDistrictData & { state: string; year: number };
@@ -78,13 +83,19 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
           .sort((a, b) =>
             Number(a.district_number) - Number(b.district_number)
           );
+        if (cancelled) return;
         setData(njRows);
         setLoading(false);
       })
       .catch((err) => {
+        if (cancelled) return;
         setError(err.message);
         setLoading(false);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [year]);
 
   if (loading) {
@@ -180,7 +191,7 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
                 <tr
                   key={d.district_number}
                   className={`border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                    selectedDistrict === d.district_number ? 'bg-teal-50' : ''
+                    selectedDistrict === d.district_number ? 'bg-primary-50' : ''
                   }`}
                   onClick={() =>
                     setSelectedDistrict((prev) =>
@@ -197,8 +208,8 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
                     {d.party ? <span className="ml-1 text-xs">({d.party})</span> : null}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-700">
-                    {d.winners_share !== undefined
-                      ? `${(d.winners_share * 100).toFixed(1)}%`
+                    {(d.winners_share_residents ?? d.winners_share) !== undefined
+                      ? `${((d.winners_share_residents ?? d.winners_share)! * 100).toFixed(1)}%`
                       : '—'}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-700">
@@ -219,11 +230,12 @@ export default function CongressionalDistrictImpact({ year = 2026 }: Props) {
 
       {/* Methodology note */}
       <p className="text-xs text-gray-500">
-        District estimates use PolicyEngine&apos;s district-calibrated
-        datasets (~9,000 households per district), from the same enhanced
-        CPS family as the statewide estimates. District figures may not
-        exactly aggregate to statewide figures because each district file
-        is calibrated independently.
+        Winners are residents whose household&apos;s net income rises,
+        matching the statewide tab. District estimates use
+        PolicyEngine&apos;s district-calibrated datasets (~9,000 households
+        per district), from the same enhanced CPS family as the statewide
+        estimates. District figures may not exactly aggregate to statewide
+        figures because each district file is calibrated independently.
       </p>
     </div>
   );
@@ -239,8 +251,19 @@ function DistrictDetailCard({
   const avgChange = district.average_household_income_change;
   const isPositive = avgChange > 0;
   const isNegative = avgChange < 0;
-  const winnersShare = district.winners_share ?? 0;
-  const losersShare = district.losers_share ?? 0;
+  // Use one population basis for the whole card — residents when both
+  // resident shares are present, otherwise households — so the residual
+  // "no change" share never mixes denominators.
+  const hasResidentShares =
+    district.winners_share_residents !== undefined &&
+    district.losers_share_residents !== undefined;
+  const winnersShare = hasResidentShares
+    ? district.winners_share_residents!
+    : district.winners_share ?? 0;
+  const losersShare = hasResidentShares
+    ? district.losers_share_residents!
+    : district.losers_share ?? 0;
+  const basisLabel = hasResidentShares ? 'residents' : 'households';
   // "No change" is the residual after winners + losers.
   const noChangeShare = Math.max(0, 1 - winnersShare - losersShare);
   const childPovChange = district.child_poverty_pct_change ?? 0;
@@ -251,7 +274,13 @@ function DistrictDetailCard({
         <div className="flex items-center gap-3">
           <span
             className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-white font-bold text-lg"
-            style={{ backgroundColor: isPositive ? '#319795' : isNegative ? '#dc2626' : '#475569' }}
+            style={{
+              backgroundColor: isPositive
+                ? 'var(--chart-1)'
+                : isNegative
+                  ? 'var(--destructive)'
+                  : 'var(--muted-foreground)',
+            }}
           >
             {district.district_number}
           </span>
@@ -286,7 +315,7 @@ function DistrictDetailCard({
           </p>
           <p
             className={`text-xl font-bold ${
-              isPositive ? 'text-teal-700' : isNegative ? 'text-red-700' : 'text-gray-700'
+              isPositive ? 'text-primary-700' : isNegative ? 'text-red-700' : 'text-gray-700'
             }`}
           >
             {isPositive ? '+' : ''}
@@ -298,16 +327,16 @@ function DistrictDetailCard({
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Winners</p>
-          <p className="text-xl font-bold text-teal-600">
+          <p className="text-xl font-bold text-primary-600">
             {(winnersShare * 100).toFixed(1)}%
           </p>
-          <p className="text-xs text-gray-500 mt-1">of households gain</p>
+          <p className="text-xs text-gray-500 mt-1">of {basisLabel} gain</p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Child poverty change</p>
           <p
             className={`text-xl font-bold ${
-              childPovChange < 0 ? 'text-teal-700' : childPovChange > 0 ? 'text-red-700' : 'text-gray-700'
+              childPovChange < 0 ? 'text-primary-700' : childPovChange > 0 ? 'text-red-700' : 'text-gray-700'
             }`}
           >
             {childPovChange > 0 ? '+' : ''}
@@ -320,7 +349,7 @@ function DistrictDetailCard({
           <p className="text-xl font-bold text-gray-600">
             {(noChangeShare * 100).toFixed(1)}%
           </p>
-          <p className="text-xs text-gray-500 mt-1">of households</p>
+          <p className="text-xs text-gray-500 mt-1">of {basisLabel}</p>
         </div>
       </div>
     </div>

@@ -12,6 +12,8 @@ export interface NJDistrictData {
   relative_household_income_change: number;
   winners_share?: number;
   losers_share?: number;
+  winners_share_residents?: number;
+  losers_share_residents?: number;
   poverty_pct_change?: number;
   child_poverty_pct_change?: number;
   state?: string;
@@ -24,11 +26,11 @@ interface Props {
 }
 
 const DIVERGING_COLORS = [
-  '#475569',
-  '#94A3B8',
-  '#E2E8F0',
-  '#81E6D9',
-  '#319795',
+  'var(--diverging-gray-teal-1)',
+  'var(--diverging-gray-teal-2)',
+  'var(--diverging-gray-teal-3)',
+  'var(--diverging-gray-teal-4)',
+  'var(--diverging-gray-teal-5)',
 ];
 
 const VB_W = 800;
@@ -62,12 +64,6 @@ interface DistrictGeometry {
   cy: number;
 }
 
-const parseHex = (color: string) => ({
-  r: parseInt(color.slice(1, 3), 16),
-  g: parseInt(color.slice(3, 5), 16),
-  b: parseInt(color.slice(5, 7), 16),
-});
-
 function interpolateColor(value: number, min: number, max: number): string {
   if (min >= max) return DIVERGING_COLORS[2];
   const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
@@ -75,12 +71,9 @@ function interpolateColor(value: number, min: number, max: number): string {
   const segPos = t * segments;
   const segIndex = Math.min(Math.floor(segPos), segments - 1);
   const segT = segPos - segIndex;
-  const c0 = parseHex(DIVERGING_COLORS[segIndex]);
-  const c1 = parseHex(DIVERGING_COLORS[segIndex + 1]);
-  const r = Math.round(c0.r + (c1.r - c0.r) * segT);
-  const g = Math.round(c0.g + (c1.g - c0.g) * segT);
-  const b = Math.round(c0.b + (c1.b - c0.b) * segT);
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  const startWeight = ((1 - segT) * 100).toFixed(4);
+  const endWeight = (segT * 100).toFixed(4);
+  return `color-mix(in srgb, ${DIVERGING_COLORS[segIndex]} ${startWeight}%, ${DIVERGING_COLORS[segIndex + 1]} ${endWeight}%)`;
 }
 
 const formatCurrency = (value: number) => {
@@ -262,7 +255,7 @@ export default function NJDistrictChoroplethMap({
             const value = districtData?.average_household_income_change ?? 0;
             const fill = districtData
               ? interpolateColor(value, colorRange.min, colorRange.max)
-              : '#e5e7eb';
+              : 'var(--gray-200)';
             const isSelected = selectedDistrict === g.districtNumber;
 
             return (
@@ -289,7 +282,7 @@ export default function NJDistrictChoroplethMap({
                 <path
                   d={g.path}
                   fill={fill}
-                  stroke={isSelected ? '#0f766e' : '#ffffff'}
+                  stroke={isSelected ? '#0f766e' : 'var(--text-inverse)'}
                   strokeWidth={isSelected ? 2.5 : 1}
                   strokeLinejoin="round"
                   style={{
@@ -307,8 +300,8 @@ export default function NJDistrictChoroplethMap({
                   dominantBaseline="middle"
                   fontSize="14"
                   fontWeight="700"
-                  fill="#ffffff"
-                  stroke="#1f2937"
+                  fill="var(--text-inverse)"
+                  stroke="var(--gray-800)"
                   strokeWidth="0.4"
                   paintOrder="stroke"
                   style={{ pointerEvents: 'none', userSelect: 'none' }}
@@ -343,8 +336,8 @@ export default function NJDistrictChoroplethMap({
       )}
 
       <p className="text-xs text-gray-500 text-center mt-4">
-        Average household impact under the selected reform variant, by New
-        Jersey congressional district (119th Congress, state FIPS 34)
+        Average household impact of the enacted 25% CTC increase vs. prior
+        law, by New Jersey congressional district (119th Congress)
       </p>
     </div>
   );

@@ -245,7 +245,12 @@ export default function AggregateImpact({ triggered }: Props) {
         const rawValues = isRelative
           ? Object.values(data.decile.relative).map(v => v * 100)
           : Object.values(data.decile.average);
-        const maxAbs = Math.max(...rawValues.map(Math.abs));
+        // Floor like the poverty chart so an all-zero series still yields a
+        // finite step (toFixed accepts at most 100 digits).
+        const maxAbs = Math.max(
+          ...rawValues.map(Math.abs),
+          isRelative ? 0.01 : 1,
+        );
         const niceStep = (() => {
           const rough = maxAbs / 3;
           const mag = Math.pow(10, Math.floor(Math.log10(rough)));
@@ -261,6 +266,9 @@ export default function AggregateImpact({ triggered }: Props) {
           { length: Math.round(2 * niceMax / niceStep) + 1 },
           (_, i) => -niceMax + i * niceStep,
         );
+        // Enough decimals to distinguish adjacent ticks (a fixed 1-decimal
+        // format collapses steps below 0.1 into duplicate labels).
+        const tickDecimals = Math.max(0, -Math.floor(Math.log10(niceStep)));
         const chartData = isRelative
           ? Object.entries(data.decile.relative).map(([k, v]) => ({ decile: k, value: v * 100 }))
           : Object.entries(data.decile.average).map(([k, v]) => ({ decile: k, value: v }));
@@ -298,7 +306,7 @@ export default function AggregateImpact({ triggered }: Props) {
                     domain={symmetricDomain}
                     ticks={niceTicks}
                     tickFormatter={isRelative
-                      ? (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`
+                      ? (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(tickDecimals)}%`
                       : formatCurrencyWithSign}
                     tick={TICK_STYLE}
                     stroke="var(--chart-axis)"
@@ -433,6 +441,10 @@ export default function AggregateImpact({ triggered }: Props) {
           return 10 * mag;
         })();
         const povNiceMax = Math.ceil(povMaxAbs / povNiceStep) * povNiceStep;
+        const povTickDecimals = Math.max(
+          2,
+          -Math.floor(Math.log10(povNiceStep)),
+        );
         const povDomain: [number, number] = allNegative
           ? [-povNiceMax, 0]
           : allPositive
@@ -466,7 +478,7 @@ export default function AggregateImpact({ triggered }: Props) {
                   <YAxis
                     domain={povDomain}
                     ticks={povTicks}
-                    tickFormatter={(v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`}
+                    tickFormatter={(v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(povTickDecimals)}%`}
                     tick={TICK_STYLE}
                     stroke="var(--chart-axis)"
                     width={70}

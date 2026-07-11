@@ -165,6 +165,26 @@ def calculate_district(district_id: str) -> dict:
         else:
             avg_change = rel_change = winners_share = losers_share = 0.0
 
+        # Resident-based winners/losers, matching the statewide pipeline:
+        # a resident counts as a winner when their household's net income
+        # rises by more than $1. The MicroSeries comparison keeps the
+        # engine-attached person weights, so .mean() is the weighted
+        # resident share.
+        person_change = sim_reform.calculate(
+            "household_net_income", period=YEAR, map_to="person"
+        ) - sim_baseline.calculate(
+            "household_net_income", period=YEAR, map_to="person"
+        )
+        winners_share_residents = float((person_change > 1).mean())
+        losers_share_residents = float((person_change < -1).mean())
+        if not (
+            np.isfinite(winners_share_residents)
+            and np.isfinite(losers_share_residents)
+        ):
+            raise RuntimeError(
+                f"Non-finite resident winner/loser shares for {district_id}"
+            )
+
         try:
             spm_unit_weight = np.array(
                 sim_baseline.calculate("spm_unit_weight", period=YEAR)
@@ -215,6 +235,8 @@ def calculate_district(district_id: str) -> dict:
             "relative_household_income_change": round(float(rel_change), 6),
             "winners_share": round(float(winners_share), 4),
             "losers_share": round(float(losers_share), 4),
+            "winners_share_residents": round(float(winners_share_residents), 4),
+            "losers_share_residents": round(float(losers_share_residents), 4),
             "poverty_pct_change": round(float(poverty_pct_change), 2),
             "child_poverty_pct_change": round(float(child_poverty_pct_change), 2),
             "state": NJ_STATE,
