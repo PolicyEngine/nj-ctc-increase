@@ -41,7 +41,7 @@ export default function PolicyOverview() {
               Treasury estimates $50.0 million for FY2027, and reports
               232,500 credits claimed for tax year 2024 ($220.7 million).
               PolicyEngine&apos;s microsimulation estimates $55 million for
-              tax year 2026 (see the Statewide tab).
+              tax year 2026 (see the Statewide impact tab).
             </p>
           </div>
         </div>
