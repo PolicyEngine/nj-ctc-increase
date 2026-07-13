@@ -23,16 +23,13 @@ export default function PolicyOverview() {
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h3 className="font-semibold text-gray-800 mb-2">What changed</h3>
             <p className="text-sm text-gray-600">
-              Per-child credit amounts rise 25%, to{' '}
-              <strong>$1,250 / $1,000 / $750 / $500 / $250</strong>{' '}
-              across the existing $0&ndash;$30k, $30k&ndash;$40k, $40k&ndash;$50k,
-              $50k&ndash;$60k, and $60k&ndash;$80k taxable income tiers
-              (previously $1,000 / $800 / $600 / $400 / $200). The $80,000
-              income ceiling and under-6 age limit are unchanged. The
-              higher amounts apply for tax years 2026, 2027, and 2028,
-              and revert to prior levels in 2029. This dashboard models
-              tax year 2026; impacts are reported relative to prior law
-              (the pre-increase credit amounts).
+              Each per-child credit amount rises <strong>25%</strong> for
+              tax years 2026 through 2028, then reverts to prior levels
+              in 2029; the table below shows the amounts for all five
+              income tiers. The $80,000 taxable-income ceiling and
+              under-6 age limit are unchanged. This dashboard models tax
+              year 2026, with impacts reported relative to prior law
+              (the pre-increase amounts).
             </p>
           </div>
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
