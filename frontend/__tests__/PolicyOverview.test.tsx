@@ -10,10 +10,12 @@ describe('PolicyOverview', () => {
     ).toBeInTheDocument();
   });
 
-  it('displays the two summary cards', () => {
+  it('focuses the overview on the policy change itself', () => {
     render(<PolicyOverview />);
     expect(screen.getByText('What changed')).toBeInTheDocument();
-    expect(screen.getByText('Cost')).toBeInTheDocument();
+    // Cost estimates and external benchmarks live on the Statewide
+    // impact tab, not the overview.
+    expect(screen.queryByText('Cost')).not.toBeInTheDocument();
     expect(screen.queryByText('Who benefits')).not.toBeInTheDocument();
     expect(screen.queryByText('Effective 2026–2028')).not.toBeInTheDocument();
   });
