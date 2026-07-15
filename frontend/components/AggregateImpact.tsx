@@ -236,6 +236,33 @@ export default function AggregateImpact({ triggered }: Props) {
               household-level budgetary figures on the other tabs.
             </p>
           </div>
+
+          {/* External benchmarks footnote */}
+          <p className="text-xs text-gray-500 italic">
+            External benchmarks: the{' '}
+            <a
+              href="https://pub.njleg.state.nj.us/Bills/2026/S5000/4531_F1.PDF"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 hover:underline"
+            >
+              Office of Legislative Services fiscal estimate
+            </a>{' '}
+            puts the increase at $51.9 million in FY2027 ($50.3 million in
+            FY2028, $48.7 million in FY2029) and the NJ Treasury estimates
+            $50.0 million for FY2027; Treasury&apos;s{' '}
+            <a
+              href="https://www.nj.gov/treasury/taxation/pdf/taxexpenditurereport2027.pdf#page=44"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 hover:underline"
+            >
+              tax expenditure report
+            </a>{' '}
+            records 232,500 credits claimed for tax year 2024 ($220.7
+            million). PolicyEngine&apos;s estimate above is within 10% of both
+            official figures.
+          </p>
         </div>
       )}
 

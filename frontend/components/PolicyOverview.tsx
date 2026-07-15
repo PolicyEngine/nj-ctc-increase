@@ -19,31 +19,18 @@ export default function PolicyOverview() {
           district impacts of the increase relative to prior law for tax
           year 2026.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-2">What changed</h3>
-            <p className="text-sm text-gray-600">
-              Each per-child credit amount rises <strong>25%</strong> for
-              tax years 2026 through 2028, then reverts to prior levels
-              in 2029; the table below shows the amounts for all five
-              income tiers. The $80,000 taxable-income ceiling and
-              under-6 age limit are unchanged. This dashboard models tax
-              year 2026, with impacts reported relative to prior law
-              (the pre-increase amounts).
-            </p>
-          </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Cost</h3>
-            <p className="text-sm text-gray-600">
-              The Office of Legislative Services estimates the increase
-              reduces state revenue by $51.9 million in FY2027, $50.3
-              million in FY2028, and $48.7 million in FY2029. The NJ
-              Treasury estimates $50.0 million for FY2027, and reports
-              232,500 credits claimed for tax year 2024 ($220.7 million).
-              PolicyEngine&apos;s microsimulation estimates $55 million for
-              tax year 2026 (see the Statewide impact tab).
-            </p>
-          </div>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+          <h3 className="font-semibold text-gray-800 mb-2">What changed</h3>
+          <p className="text-sm text-gray-600">
+            Each per-child credit amount rises <strong>25%</strong> for
+            tax years 2026 through 2028, then reverts to prior levels
+            in 2029; the table below shows the amounts for all five
+            income tiers. The $80,000 taxable-income ceiling and
+            under-6 age limit are unchanged. This dashboard models tax
+            year 2026, with impacts reported relative to prior law
+            (the pre-increase amounts). Cost estimates, including
+            external benchmarks, are on the Statewide impact tab.
+          </p>
         </div>
       </div>
 
