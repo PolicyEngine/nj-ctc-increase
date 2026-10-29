@@ -70,6 +70,5 @@ PR #8971) in `pyproject.toml` and the Modal images
 Both pipelines fail loudly if the pinned release does not contain the
 enacted increase (baseline CTC totals would equal current-law totals).
 
-Live: <https://nj-ctc-increase.vercel.app/us/nj-ctc-increase> (also
-served at <https://policyengine.org/us/nj-ctc-increase> via the
-policyengine-app-v2 multizone registry)
+Live: <https://policyengine.org/us/nj-ctc-increase>, served through the
+policyengine-app-v2 multizone registry.
