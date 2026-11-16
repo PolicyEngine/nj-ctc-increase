@@ -3,7 +3,7 @@ name = "nj-ctc-increase"
 version = "1.0.0"
 description = "Enacted New Jersey CTC increase calculator and data pipeline"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     # 1.768.2 is the first release containing PR #8971 (the enacted
     # NJ CTC increase); matches POLICYENGINE_US_PIN in the Modal scripts.
